@@ -72,19 +72,55 @@ def setup():
         conn.commit()
 
 
-def _response_rows(data):
-    if isinstance(data, list):
-        if data and not isinstance(data[0], dict):
-            raise RuntimeError('JT API retornou linhas sem nomes de colunas.')
-        return data
+# Colunas projetadas por consultas fixas do dashboard 1BD e 5CD.
+# A JT API pode retornar listas posicionais em vez de dicionários.
+_API_COLS_1BD = (
+    'data', 'remessa', 'ticket', 'entregue', 'base_original', 'base',
+    'codigo', 'uf', 'rm', 'coordenador', 'supervisor', 'sc', 'tipo_sc',
+    'situacao', 'problema',
+)
+_API_COLS_5CD = (
+    'data', 'remessa', 'dias_base', 'atraso', 'faixa', 'operacao',
+    'package_id', 'motivo', 'base_original', 'codigo', 'base', 'uf',
+    'rm', 'coordenador', 'supervisor', 'sc', 'tipo_sc',
+)
+
+
+def _api_columns(statement: str):
+    normalized = re.sub(r'\s+', ' ', statement).lower()
+    if 'from jt_1bd_registros r join jt_1bd_gestao g' in normalized:
+        return _API_COLS_1BD
+    if 'from jt_5cd_registros r join jt_1bd_gestao g' in normalized:
+        return _API_COLS_5CD
+    if normalized.lstrip().startswith('select count(*) as n from '):
+        return ('n',)
+    return None
+
+
+def _response_rows(data, columns=None):
     if isinstance(data, dict):
         for key in ('rows', 'data', 'result', 'resultado', 'registros'):
             if isinstance(data.get(key), list):
-                return _response_rows(data[key])
-    raise RuntimeError('Formato inesperado da resposta da JT API.')
+                return _response_rows(data[key], columns)
+        raise RuntimeError('Formato inesperado da resposta da JT API.')
+    if not isinstance(data, list):
+        raise RuntimeError('JT API /query deve retornar uma lista de linhas.')
+    result = []
+    for row in data:
+        if isinstance(row, dict):
+            result.append(row)
+        elif isinstance(row, (list, tuple)) and columns is not None:
+            if len(row) != len(columns):
+                raise RuntimeError('JT API retornou linha posicional com '
+                                   f'{len(row)} colunas; esperado {len(columns)}.')
+            result.append(dict(zip(columns, row)))
+        else:
+            raise RuntimeError('JT API retornou linha sem nomes de coluna para '
+                               'consulta não reconhecida. Não é seguro inferir campos.')
+    return result
 
 
-def _api_post_query(query: str, params: tuple):
+def _api_post_query(query: str, params: tuple, columns=None):
     import requests
     url = os.environ.get('JT_API_URL', '').strip().rstrip('/')
     key = os.environ.get('JT_API_KEY', '').strip()
@@ -94,7 +130,7 @@ def _api_post_query(query: str, params: tuple):
                          json={'sql': query, 'params': list(params)}, timeout=120)
     if not resp.ok:
         raise RuntimeError(f'JT API /query HTTP {resp.status_code} (verifique API e SQL).')
-    return _response_rows(resp.json())
+    return _response_rows(resp.json(), columns)
 
 
 @lru_cache(maxsize=50)
@@ -102,7 +138,7 @@ def _cached_api_rows(statement: str, parameters: tuple, bucket: int):
     page_size, output, offset = 500, [], 0
     while True:
         page_sql = f'{statement.strip().rstrip(";")} LIMIT %s OFFSET %s'
-        batch = _api_post_query(page_sql, parameters + (page_size, offset))
+        batch = _api_post_query(page_sql, parameters + (page_size, offset), _api_columns(statement))
         output.extend(batch)
         if len(batch) < page_size:
             break
