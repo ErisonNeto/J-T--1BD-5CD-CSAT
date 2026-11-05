@@ -9,16 +9,15 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.10
+      - key: META_1BD
+        value: "0.80"
+      - key: REQUIRE_DASH_AUTH
+        value: "true"
+      - key: REQUIRE_REMOTE_DB
+        value: "true"
       - key: DATABASE_URL
         sync: false
       - key: DASH_USER
         sync: false
       - key: DASH_PASS
         sync: false
-      - key: META_1BD
-        value: "0.80"
-# IMPORTANTE:
-# Render exige banco PostgreSQL acessivel do Render pela rede.
-# Host-only VM 192.168.56.10 NAO e acessivel em Render.
-# JWT/API J&T em JT_API_URL nao e integrado a este dashboard.
-# Nao coloque credenciais nem arquivos SQLite/.xlsx no GitHub.
