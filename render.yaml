@@ -2,6 +2,7 @@ services:
   - type: web
     name: jt-qualidade-1bd-5cd-csat
     runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
@@ -11,11 +12,17 @@ services:
         value: 3.12.10
       - key: META_1BD
         value: "0.80"
+      - key: JT_STORAGE_MODE
+        value: supabase
+      - key: SUPABASE_CACHE_SECONDS
+        value: "120"
       - key: REQUIRE_DASH_AUTH
         value: "true"
       - key: REQUIRE_REMOTE_DB
         value: "true"
-      - key: DATABASE_URL
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
         sync: false
       - key: DASH_USER
         sync: false

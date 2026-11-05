@@ -18,11 +18,13 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
-from database import rows, scalar, setup
+from database import rows, scalar, setup, IS_POSTGRES, IS_API, IS_SUPABASE, DATABASE_URL
 
 ROOT = Path(__file__).resolve().parent
 ORLEAN = 'ORLEAN DA SILVA DO NASCIMENTO'
 USUARIO = os.getenv('DASH_USER', '').strip()
+REQUIRE_DASH_AUTH = os.getenv('REQUIRE_DASH_AUTH', '').lower() in ('1','true','yes')
+REQUIRE_REMOTE_DB = os.getenv('REQUIRE_REMOTE_DB', '').lower() in ('1','true','yes')
 SENHA = os.getenv('DASH_PASS', '').strip()
 try:
     META = float(os.getenv('META_1BD', '0.80'))
@@ -34,6 +36,12 @@ app = FastAPI(title='J&T — Qualidade | 1BD · 5CD · CSAT', version='1.1.0')
 
 @app.middleware('http')
 async def basic_auth(request: Request, call_next):
+    if request.url.path == '/health':
+        return await call_next(request)
+    if REQUIRE_DASH_AUTH and not (USUARIO and SENHA):
+        return JSONResponse({'erro':'DASH_USER e DASH_PASS devem ser configurados'}, status_code=503)
+    if REQUIRE_REMOTE_DB and not (IS_POSTGRES or IS_API or IS_SUPABASE):
+        return JSONResponse({'erro':'Banco remoto nao configurado; defina JT_STORAGE_MODE e credenciais'}, status_code=503)
     if USUARIO and SENHA:
         auth=request.headers.get('authorization', '')
         success=False
@@ -175,6 +183,10 @@ def rankings(items, semana, anterior, hoje, dia_d7, dimension, min_volume=1):
 
 @app.get('/health')
 def health():
+    if REQUIRE_DASH_AUTH and not (USUARIO and SENHA):
+        raise HTTPException(503, 'Painel sem autenticação configurada')
+    if REQUIRE_REMOTE_DB and not (IS_POSTGRES or IS_API or IS_SUPABASE):
+        raise HTTPException(503, 'Configure JT_STORAGE_MODE=supabase e as variaveis SUPABASE_URL e SUPABASE_SECRET_KEY')
     try:
         setup()
         from importar_5cd import setup_5cd

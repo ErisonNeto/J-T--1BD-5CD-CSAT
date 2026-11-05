@@ -10,7 +10,7 @@ import argparse
 from collections import Counter
 import hashlib
 from pathlib import Path
-from database import connection, setup, sql
+from database import connection, setup, sql, IS_API, IS_SUPABASE
 from importar_excel import carregar_gestao, carregar_aliases, ORLEAN
 from xlsx_reader import ler_aba, data_excel, normalizar
 
@@ -19,6 +19,8 @@ ABAS=('Dados históricos 历史数据','BD')
 
 
 def setup_5cd():
+    if IS_API or IS_SUPABASE:
+        return  # Dados ja importados ao Postgres; consultar somente pela JT API
     setup()
     with connection() as conn:
         conn.execute('''CREATE TABLE IF NOT EXISTS jt_5cd_registros (

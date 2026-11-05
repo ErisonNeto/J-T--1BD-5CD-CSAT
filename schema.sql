@@ -1,7 +1,5 @@
--- J&T | Qualidade 1BD e 5CD (PostgreSQL 18)
--- Executar no banco jt_indicadores, como usuario com CREATE no schema public.
--- Seguro para repeticao: nao apaga dados nem altera outras tabelas J&T.
--- CSAT: modelo pendente de definicao da fonte e dos criterios oficiais.
+-- J&T | Qualidade TikTok 1BD / 5CD
+-- SQL idempotente no banco jt_indicadores, sem apagar outros indicadores.
 BEGIN;
 CREATE TABLE IF NOT EXISTS public.jt_1bd_gestao (
   base_chave TEXT PRIMARY KEY,
@@ -49,8 +47,5 @@ CREATE INDEX IF NOT EXISTS ix_1bd_base ON public.jt_1bd_registros(base_chave);
 CREATE INDEX IF NOT EXISTS ix_1bd_rm ON public.jt_1bd_gestao(rm);
 CREATE INDEX IF NOT EXISTS ix_5cd_data ON public.jt_5cd_registros(data_relatorio);
 CREATE INDEX IF NOT EXISTS ix_5cd_base ON public.jt_5cd_registros(base_chave);
-CREATE INDEX IF NOT EXISTS ix_5cd_date_base ON public.jt_5cd_registros(data_relatorio,base_chave);
+CREATE INDEX IF NOT EXISTS ix_5cd_date_base ON public.jt_5cd_registros(data_relatorio, base_chave);
 COMMIT;
--- Conferir:
--- SELECT COUNT(*) FROM public.jt_1bd_registros;
--- SELECT COUNT(*) FROM public.jt_5cd_registros;

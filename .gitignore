@@ -1,6 +1,18 @@
+# Credenciais locais
 .env
+.env.*
+!.env.exemplo
+!.env.example
 .venv/
 __pycache__/
-*.pyc
-dados/*.xlsx
-dados/*.sqlite3
+*.py[cod]
+.pytest_cache/
+# Dados reais de pedidos e gestão: manter fora do GitHub publico
+dados/
+*.sqlite3
+*.db
+*.xlsx
+*.xls
+*.csv
+*.zip
+*.rar
