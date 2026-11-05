@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: jt-qualidade-1bd-5cd-csat
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: DATABASE_URL
+        sync: false
+      - key: DASH_USER
+        sync: false
+      - key: DASH_PASS
+        sync: false
+      - key: META_1BD
+        value: "0.80"
+# IMPORTANTE:
+# Render exige banco PostgreSQL acessivel do Render pela rede.
+# Host-only VM 192.168.56.10 NAO e acessivel em Render.
+# JWT/API J&T em JT_API_URL nao e integrado a este dashboard.
+# Nao coloque credenciais nem arquivos SQLite/.xlsx no GitHub.
