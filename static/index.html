@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>J&T Express | Indicadores 1BD · 5CD · CSAT</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
+  <script src="/static/5cd.js" defer></script>
+</head>
+<body>
+ <header class="topbar">
+  <div class="topbar-inner">
+   <div class="shipping-brand-block">
+    <div class="shipping-badges">
+     <span class="shipping-badge shipping-badge-red">J&amp;T EXPRESS</span>
+     <span class="shipping-badge shipping-badge-gray">LAST MILE</span>
+     <span class="shipping-badge shipping-badge-gray">R/M ORLEAN</span>
+    </div>
+    <h1>Painel de Qualidade <span class="title-accent" aria-hidden="true"></span></h1>
+    <p>Monitoramento operacional · 1BD, 5CD e CSAT</p>
+   </div>
+   <div class="header-date-box" aria-label="Data de referência padrão dos filtros">
+    <span>PERÍODO PADRÃO</span>
+    <strong>D-2</strong>
+    <small>Data inicial e final · editáveis</small>
+   </div>
+  </div>
+ </header>
+ <main class="container content">
+  <div class="suite-title">
+   <div><span class="section-kicker">QUALIDADE DE SERVIÇO</span><strong>Indicadores de desempenho</strong></div>
+   <span class="suite-note">Gestão Orlean · Visão por UF, S/C e base</span>
+  </div>
+  <nav class="indicator-tabs" role="tablist" aria-label="Selecionar indicador">
+    <button type="button" role="tab" id="tab-1bd" aria-selected="true" aria-controls="indicador-1bd" class="indicator-tab active" data-indicator="1bd"><span class="tab-name">1BD</span><span class="tab-caption">Entregas TikTok</span></button>
+    <button type="button" role="tab" id="tab-5cd" aria-selected="false" aria-controls="indicador-5cd" class="indicator-tab" data-indicator="5cd"><span class="tab-name">5CD</span><span class="tab-caption">Pendências TikTok</span></button>
+    <button type="button" role="tab" id="tab-csat" aria-selected="false" aria-controls="indicador-csat" class="indicator-tab" data-indicator="csat"><span class="tab-name">CSAT</span><span class="tab-caption">Configuração pendente</span></button>
+  </nav>
+  <div id="indicador-1bd" role="tabpanel" aria-labelledby="tab-1bd">
+  <div class="title-row"><div><div class="eyebrow">TIKTOK · 1 BUSINESS DAY</div><h2 class="indicator-heading">Entregas concluídas em 1BD</h2><p class="subtitle">Performance TikTok por região, responsável e base de entrega</p></div>
+   <div class="header-actions"><span id="lastDate" class="last-date">Atualizando dados...</span><button class="download" type="button" id="export">⬇ &nbsp; Exportar base</button></div>
+  </div>
+  <section class="filters panel" aria-label="Filtros do indicador">
+    <div class="filters-head"><div><span class="section-kicker">FILTROS · 1BD</span><h3>Personalize sua análise</h3><p>Data, UF, responsável e base. As duas datas iniciam automaticamente em D-2.</p></div><span class="filters-period">D-2 <small>padrão</small></span></div>
+    <div class="filter-fields">
+   <div class="filter-group"><label for="start">Data inicial</label><input type="date" id="start" /></div>
+   <div class="filter-group"><label for="end">Data final</label><input type="date" id="end" /></div>
+   <div class="filter-group"><label for="uf">UF</label><select id="uf"><option value="">Todas</option></select></div>
+   <div class="filter-group wider"><label for="sc">S/C · Coord. ou supervisor</label><select id="sc"><option value="">Todos</option></select></div>
+   <div class="filter-group wider"><label for="base">Base</label><select id="base"><option value="">Todas</option></select></div>
+   <div class="filter-group"><label for="minvol">Volume mín. ranking</label><select id="minvol"><option value="1" selected>1</option><option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="50">50</option></select></div>
+   <div class="filter-action"><button type="button" id="apply" class="btn-primary">Aplicar</button><button type="button" id="clear" class="btn-secondary">Limpar</button></div>
+    </div>
+   </section>
+  <div id="notice" class="notice" hidden></div>
+  <div id="panelContent">
+   <div class="section-divider"><div><span class="section-kicker">VISÃO OPERACIONAL</span><h3>Resumo do período</h3></div><span class="section-detail">Taxas, volumes e comparativos semanais</span></div>
+   <section class="cards" aria-label="Indicadores principais">
+    <article class="kpi main-kpi"><span class="kpi-label">Taxa 1BD · período</span><div class="kpi-value" id="kpiRate">—</div><div class="kpi-foot"><span id="kpiTotal">— avaliações</span><span id="kpiGoal">Meta referência: 80%</span></div><div class="small-progress"><span id="rateBar"></span></div></article>
+    <article class="kpi"><span class="kpi-label">Entregues em 1BD</span><div class="kpi-value positive" id="kpiYes">—</div><div class="kpi-foot">Quantidade marcada como “Sim”</div></article>
+    <article class="kpi"><span class="kpi-label">Fora de 1BD</span><div class="kpi-value negative" id="kpiNo">—</div><div class="kpi-foot">Quantidade marcada como “Não”</div></article>
+    <article class="kpi"><span class="kpi-label">Taxa · semana atual</span><div class="kpi-value" id="kpiWeek">—</div><div class="kpi-foot"><span id="weekLabel">Seg–Dom</span><span id="weekDelta">—</span></div></article>
+    <article class="kpi"><span class="kpi-label">Taxa · semana passada</span><div class="kpi-value" id="kpiPrev">—</div><div class="kpi-foot" id="prevLabel">Seg–Dom anterior</div></article>
+    <article class="kpi"><span class="kpi-label">Mesmo dia da semana passada</span><div class="kpi-value" id="kpiDay">—</div><div class="kpi-foot"><span id="dayLabel">D-7</span><span id="dayDelta">—</span></div></article>
+   </section>
+   <div class="explanation">As variações em <strong>p.p.</strong> representam a diferença entre as taxas. O percentual relativo também aparece nos comparativos; as semanas são fixas, de <strong>segunda a domingo</strong>.</div>
+   <div class="section-divider section-divider-charts"><div><span class="section-kicker">ANÁLISE OPERACIONAL</span><h3>Evolução e distribuição</h3></div><span class="section-detail">Comparativos D-7 e W/W nos gráficos</span></div>
+   <div class="charts-2">
+    <section class="panel chart-panel"><div class="panel-heading"><div><h2>Evolução diária</h2><p>Taxa 1BD e comparação com o mesmo dia da semana anterior</p></div><span class="small-tag">D-7 no tooltip</span></div><div class="canvas-wrap"><canvas id="dailyChart"></canvas></div></section>
+    <section class="panel chart-panel"><div class="panel-heading"><div><h2>Evolução semanal</h2><p>Semanas fechadas de segunda a domingo</p></div><span class="small-tag">W/W no tooltip</span></div><div class="canvas-wrap"><canvas id="weeklyChart"></canvas></div></section>
+   </div>
+   <div class="charts-2">
+    <section class="panel chart-panel"><div class="panel-heading"><div><h2>Performance por UF</h2><p>Taxa acumulada com variação semanal por estado</p></div></div><div class="canvas-wrap"><canvas id="ufChart"></canvas></div></section>
+    <section class="panel chart-panel"><div class="panel-heading"><div><h2>Evolução mensal</h2><p>Taxa consolidada ponderada pelo volume</p></div></div><div class="canvas-wrap"><canvas id="monthChart"></canvas></div></section>
+   </div>
+   <section class="panel table-panel"><div class="panel-heading"><div><h2>Ranking de S/C</h2><p>Coordenadores e supervisores · Pior desempenho no topo</p></div><div class="count" id="scCounter">— responsáveis</div></div><div class="table-scroll"><table><thead><tr><th>S/C</th><th>Tipo</th><th>Registros</th><th>Sim</th><th>Não</th><th>Taxa período</th><th>Semana passada</th><th>Semana atual</th><th>Variação semanal</th><th>Mesmo dia W-1</th><th>Variação D-7</th></tr></thead><tbody id="scTable"></tbody></table></div></section>
+   <section class="panel table-panel"><div class="panel-heading"><div><h2>Ranking de bases</h2><p>Todas as bases elegíveis na gestão do Orlean · Pior desempenho no topo</p></div><div class="count" id="baseCounter">— bases</div></div><div class="table-scroll"><table><thead><tr><th>Base</th><th>UF</th><th>S/C</th><th>Registros</th><th>Sim</th><th>Não</th><th>Taxa período</th><th>Semana passada</th><th>Semana atual</th><th>Variação semanal</th><th>Mesmo dia W-1</th><th>Variação D-7</th></tr></thead><tbody id="baseTable"></tbody></table></div></section>
+  </div>
+  </div>
+  <div id="indicador-5cd" role="tabpanel" aria-labelledby="tab-5cd" hidden>
+   <div class="title-row"><div><div class="eyebrow">TIKTOK · TRECHO D · LM 5CD</div><h2 class="indicator-heading">Remessas pendentes no relatório 5CD</h2><p class="subtitle">Volume por data de relatório (coluna I), R/M Orlean, S/C e bases</p></div>
+     <div class="header-actions"><span id="c5Date" class="last-date">Último relatório: —</span><button class="download" id="c5Export" type="button">Exportar base 5CD</button></div></div>
+   <section class="filters panel" aria-label="Filtros 5CD">
+    <div class="filters-head"><div><span class="section-kicker">FILTROS · 5CD</span><h3>Personalize sua análise</h3><p>Data, UF, responsável e base. As duas datas iniciam automaticamente em D-2.</p></div><span class="filters-period">D-2 <small>padrão</small></span></div>
+    <div class="filter-fields">
+     <div class="filter-group"><label for="c5Start">Data inicial</label><input type="date" id="c5Start"></div>
+     <div class="filter-group"><label for="c5End">Data final</label><input type="date" id="c5End"></div>
+     <div class="filter-group"><label for="c5Uf">UF</label><select id="c5Uf"><option value="">Todas</option></select></div>
+     <div class="filter-group wider"><label for="c5Sc">S/C · Coordenador ou supervisor</label><select id="c5Sc"><option value="">Todos</option></select></div>
+     <div class="filter-group wider"><label for="c5Base">Base</label><select id="c5Base"><option value="">Todas</option></select></div>
+     <div class="filter-group"><label for="c5Minvol">Volume mín. ranking</label><select id="c5Minvol"><option value="1">1</option><option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="50">50</option></select></div>
+     <div class="filter-action"><button type="button" class="btn-primary" id="c5Apply">Aplicar</button><button type="button" class="btn-secondary" id="c5Clear">Limpar</button></div>
+    </div>
+   </section>
+   <div class="notice" id="c5Notice" hidden></div>
+   <div id="c5Content" hidden>
+     <div class="section-divider"><div><span class="section-kicker">VISÃO OPERACIONAL</span><h3>Resumo do período</h3></div><span class="section-detail">Pendências, aging e comparativos semanais</span></div>
+     <section class="cards">
+       <article class="kpi main-kpi"><span class="kpi-label">Pendentes · último relatório</span><div class="kpi-value" id="c5Total">—</div><div class="kpi-foot">Remessas distintas por data e base</div></article>
+       <article class="kpi"><span class="kpi-label">De 5 a 9 dias em base</span><div class="kpi-value" id="c5Aging5">—</div><div class="kpi-foot"><span>Faixa por coluna C</span><span id="c5Aging5Delta">—</span></div></article>
+       <article class="kpi"><span class="kpi-label">10 dias ou mais</span><div class="kpi-value negative" id="c5Aging10">—</div><div class="kpi-foot"><span>Remessas mais antigas</span><span id="c5Aging10Delta">—</span></div></article>
+       <article class="kpi"><span class="kpi-label">Média diária · semana atual</span><div class="kpi-value" id="c5Week">—</div><div class="kpi-foot"><span id="c5WeekLabel">Seg–Dom</span><span id="c5WeekDelta">—</span></div></article>
+       <article class="kpi"><span class="kpi-label">Média diária · semana passada</span><div class="kpi-value" id="c5Prev">—</div><div class="kpi-foot" id="c5PrevLabel">Seg–Dom</div></article>
+       <article class="kpi"><span class="kpi-label">Mesmo dia da semana passada</span><div class="kpi-value" id="c5PastDay">—</div><div class="kpi-foot"><span id="c5DayLabel">D-7</span><span id="c5DayDelta">—</span></div></article>
+     </section>
+     <div class="explanation">O 5CD mostra <strong>quantidades de remessas pendentes</strong>, não taxa de SLA. Na comparação semanal (segunda a domingo), usamos a <strong>média diária dos relatórios disponíveis</strong> para não contar a mesma remessa repetidamente em vários dias. Dias sem relatório não são zero. <strong>Queda de volume é positiva.</strong></div>
+     <div class="section-divider section-divider-charts"><div><span class="section-kicker">ANÁLISE OPERACIONAL</span><h3>Evolução e distribuição</h3></div><span class="section-detail">Volume diário, semanal e distribuição por aging</span></div>
+     <div class="charts-2">
+       <section class="panel chart-panel"><div class="panel-heading"><div><h2>Evolução diária · 5CD</h2><p>Remessas pendentes e variação contra mesmo dia da semana anterior</p></div><span class="small-tag">D-7 no gráfico</span></div><div class="canvas-wrap"><canvas id="c5DailyChart"></canvas></div></section>
+       <section class="panel chart-panel"><div class="panel-heading"><div><h2>Evolução semanal</h2><p>Média diária nos relatórios de cada semana (seg–dom)</p></div><span class="small-tag">W/W no gráfico</span></div><div class="canvas-wrap"><canvas id="c5WeeklyChart"></canvas></div></section>
+     </div>
+     <div class="charts-2">
+       <section class="panel chart-panel"><div class="panel-heading"><div><h2>Pendências por UF</h2><p>Volume atual e variação semanal por estado</p></div></div><div class="canvas-wrap"><canvas id="c5UfChart"></canvas></div></section>
+       <section class="panel chart-panel"><div class="panel-heading"><div><h2>Aging das remessas</h2><p>Distribuição do tempo em base no último relatório</p></div></div><div class="canvas-wrap"><canvas id="c5AgeChart"></canvas></div></section>
+     </div>
+     <section class="panel table-panel"><div class="panel-heading"><div><h2>Ranking de S/C · maiores pendências primeiro</h2><p>Semana anterior · mesmo dia W-1 · variação de volume em cada responsável</p></div><span class="count" id="c5ScCount">—</span></div>
+       <div class="table-scroll"><table><thead><tr><th>S/C</th><th>Tipo</th><th>Último dia</th><th>10+ dias</th><th>Semana anterior (média)</th><th>Semana atual (média)</th><th>Variação semanal</th><th>Mesmo dia W-1</th><th>Variação D-7</th></tr></thead><tbody id="c5ScTable"></tbody></table></div>
+     </section>
+     <section class="panel table-panel"><div class="panel-heading"><div><h2>Ranking de bases · maiores pendências primeiro</h2><p>Vinculação e responsáveis atualizados da Gestão</p></div><span class="count" id="c5BaseCount">—</span></div>
+       <div class="table-scroll"><table><thead><tr><th>Base</th><th>UF</th><th>S/C</th><th>Último dia</th><th>10+ dias</th><th>Semana anterior (média)</th><th>Semana atual (média)</th><th>Variação semanal</th><th>Mesmo dia W-1</th><th>Variação D-7</th></tr></thead><tbody id="c5BaseTable"></tbody></table></div>
+     </section>
+   </div>
+  </div>
+  <div id="indicador-csat" role="tabpanel" aria-labelledby="tab-csat" hidden>
+    <section class="indicator-empty panel">
+      <div class="empty-symbol">CSAT</div>
+      <div><div class="eyebrow">SATISFAÇÃO DO CLIENTE</div><h2>Estrutura preparada para receber os dados</h2>
+        <p>A aba CSAT faz parte deste mesmo dashboard. A fonte, a escala de avaliações, o denominador e a meta serão configurados conforme o relatório oficial.</p>
+        <div class="empty-grid"><div><strong>Filtros previstos</strong><span>Período · UF · S/C · Base</span></div><div><strong>Comparativos previstos</strong><span>Semana anterior (seg–dom) · D-7</span></div><div><strong>Visões previstas</strong><span>KPIs · Evolução · Rankings · CSV</span></div></div>
+        <p class="empty-hint">Sem preenchimento fictício de avaliações ou percentuais.</p>
+      </div>
+    </section>
+  </div>
+  <footer class="dashboard-footer"><span>J&T Express · Gestão de Qualidade</span><span>Fontes: TikTok 1BD e 5CD + Gestão de colaboradores · Orlean</span></footer>
+ </main>
+</body>
+</html>
