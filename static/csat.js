@@ -5,6 +5,13 @@ let csFiltersReady = false;
 let csLoading = false;
 const csFmtPct = v => v === null || v === undefined ? '—' : `${(v*100).toFixed(2).replace('.', ',')}%`;
 const csFmtNum = v => new Intl.NumberFormat('pt-BR').format(v ?? 0);
+// Tradução apenas visual: os valores originais permanecem no PostgreSQL.
+const csCategoriaPT = Object.freeze({
+  '干线工单': 'Transferência (Line Haul)',
+  'DNR工单': 'Entrega não recebida (DNR)',
+  '末端工单': 'Última milha (Last Mile)'
+});
+const csNomeCategoria = nome => csCategoriaPT[String(nome ?? '').trim()] ?? nome;
 const csFmtPP = d => d?.pp === null || d?.pp === undefined ? '—' : `${d.pp>0?'+':''}${d.pp.toFixed(2).replace('.', ',')} p.p.`;
 const csDiffCls = d => (d?.pp || 0) > 0 ? 'positive' : (d?.pp || 0) < 0 ? 'negative' : '';
 const csSafe = x => String(x ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -56,7 +63,7 @@ function csRenderCharts(data){
   csPlot('csUfChart','bar',uf.map(x=>x.nome),[
     {label:'CSAT UF',data:uf.map(x=>x.taxa===null?null:x.taxa*100),backgroundColor:'#d71920',borderRadius:5,maxBarThickness:56}
   ],uf.map(x=>[`Avaliações: ${csFmtNum(x.total)}`,`Positivas: ${csFmtNum(x.sim)}`,`Variação W/W: ${csFmtPP(x.variacao_semana)}`]));
-  csPlot('csCategoryChart','bar',cat.map(x=>x.nome),[
+  csPlot('csCategoryChart','bar',cat.map(x=>csNomeCategoria(x.nome)),[
     {label:'Positivas',data:cat.map(x=>x.sim),backgroundColor:'#199a62',borderRadius:4,maxBarThickness:44},
     {label:'Negativas',data:cat.map(x=>x.nao),backgroundColor:'#d71920',borderRadius:4,maxBarThickness:44}
   ],cat.map(x=>[`Total: ${csFmtNum(x.total)}`,`CSAT: ${csFmtPct(x.taxa)}`]),
