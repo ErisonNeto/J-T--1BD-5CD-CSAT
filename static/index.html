@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
   <script src="/static/app.js" defer></script>
   <script src="/static/5cd.js" defer></script>
+  <script src="/static/csat.js" defer></script>
 </head>
 <body>
  <header class="topbar">
@@ -36,7 +37,7 @@
   <nav class="indicator-tabs" role="tablist" aria-label="Selecionar indicador">
     <button type="button" role="tab" id="tab-1bd" aria-selected="true" aria-controls="indicador-1bd" class="indicator-tab active" data-indicator="1bd"><span class="tab-name">1BD</span><span class="tab-caption">Entregas TikTok</span></button>
     <button type="button" role="tab" id="tab-5cd" aria-selected="false" aria-controls="indicador-5cd" class="indicator-tab" data-indicator="5cd"><span class="tab-name">5CD</span><span class="tab-caption">Pendências TikTok</span></button>
-    <button type="button" role="tab" id="tab-csat" aria-selected="false" aria-controls="indicador-csat" class="indicator-tab" data-indicator="csat"><span class="tab-name">CSAT</span><span class="tab-caption">Configuração pendente</span></button>
+    <button type="button" role="tab" id="tab-csat" aria-selected="false" aria-controls="indicador-csat" class="indicator-tab" data-indicator="csat"><span class="tab-name">CSAT</span><span class="tab-caption">Satisfação TikTok</span></button>
   </nav>
   <div id="indicador-1bd" role="tabpanel" aria-labelledby="tab-1bd">
   <div class="title-row"><div><div class="eyebrow">TIKTOK · 1 BUSINESS DAY</div><h2 class="indicator-heading">Entregas concluídas em 1BD</h2><p class="subtitle">Performance TikTok por região, responsável e base de entrega</p></div>
@@ -124,16 +125,55 @@
    </div>
   </div>
   <div id="indicador-csat" role="tabpanel" aria-labelledby="tab-csat" hidden>
-    <section class="indicator-empty panel">
-      <div class="empty-symbol">CSAT</div>
-      <div><div class="eyebrow">SATISFAÇÃO DO CLIENTE</div><h2>Estrutura preparada para receber os dados</h2>
-        <p>A aba CSAT faz parte deste mesmo dashboard. A fonte, a escala de avaliações, o denominador e a meta serão configurados conforme o relatório oficial.</p>
-        <div class="empty-grid"><div><strong>Filtros previstos</strong><span>Período · UF · S/C · Base</span></div><div><strong>Comparativos previstos</strong><span>Semana anterior (seg–dom) · D-7</span></div><div><strong>Visões previstas</strong><span>KPIs · Evolução · Rankings · CSV</span></div></div>
-        <p class="empty-hint">Sem preenchimento fictício de avaliações ou percentuais.</p>
+    <div class="title-row"><div><div class="eyebrow">TIKTOK · CSAT · LAST MILE</div>
+      <h2 class="indicator-heading">Satisfação do cliente — CSAT</h2>
+      <p class="subtitle">Base TikTok · Semana oficial (coluna D) · R/M Orlean · Avaliação 1 positiva / 0 negativa</p></div>
+      <div class="header-actions"><span id="csLast" class="last-date">Atualizando dados...</span><button id="csExport" class="download" type="button">Exportar resumo CSAT</button></div>
+    </div>
+    <section class="filters panel" aria-label="Filtros CSAT">
+      <div class="filters-head"><div><span class="section-kicker">FILTROS · CSAT</span><h3>Personalize sua análise</h3>
+        <p>Semanas do próprio relatório, UF, S/C e base. W44 e W45 são definidas pela coluna D, não pelo calendário.</p></div>
+        <span class="filters-period">W/W <small>semanal</small></span></div>
+      <div class="filter-fields">
+        <div class="filter-group"><label for="csStart">Semana inicial</label><select id="csStart"><option value="">Última semana</option></select></div>
+        <div class="filter-group"><label for="csEnd">Semana final</label><select id="csEnd"><option value="">Última semana</option></select></div>
+        <div class="filter-group"><label for="csUf">UF</label><select id="csUf"><option value="">Todas</option></select></div>
+        <div class="filter-group wider"><label for="csSc">S/C · Coordenador ou supervisor</label><select id="csSc"><option value="">Todos</option></select></div>
+        <div class="filter-group wider"><label for="csBase">Base</label><select id="csBase"><option value="">Todas</option></select></div>
+        <div class="filter-group"><label for="csMinvol">Volume mín. ranking</label><select id="csMinvol"><option value="1">1</option><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="20">20</option></select></div>
+        <div class="filter-action"><button type="button" id="csApply" class="btn-primary">Aplicar</button><button type="button" id="csClear" class="btn-secondary">Limpar</button></div>
       </div>
     </section>
+    <div id="csNotice" class="notice" hidden></div>
+    <div id="csContent" hidden>
+      <div class="section-divider"><div><span class="section-kicker">SATISFAÇÃO DO CLIENTE</span><h3>Resumo do período</h3></div><span class="section-detail">Avaliações válidas: 1 positiva, 0 negativa</span></div>
+      <section class="cards">
+        <article class="kpi main-kpi"><span class="kpi-label">Taxa CSAT · período</span><div class="kpi-value" id="csRate">—</div><div class="kpi-foot"><span id="csRateTotal">— avaliações</span><span>Positivas / total</span></div></article>
+        <article class="kpi"><span class="kpi-label">Avaliações positivas</span><div class="kpi-value positive" id="csPositive">—</div><div class="kpi-foot">Coluna S = 1</div></article>
+        <article class="kpi"><span class="kpi-label">Avaliações negativas</span><div class="kpi-value negative" id="csNegative">—</div><div class="kpi-foot">Coluna S = 0</div></article>
+        <article class="kpi"><span class="kpi-label">Última semana selecionada</span><div class="kpi-value" id="csCurrent">—</div><div class="kpi-foot"><span id="csCurrentLabel">—</span></div></article>
+        <article class="kpi"><span class="kpi-label">Semana anterior</span><div class="kpi-value" id="csPrevious">—</div><div class="kpi-foot"><span id="csPreviousLabel">—</span></div></article>
+        <article class="kpi"><span class="kpi-label">Variação semanal</span><div class="kpi-value" id="csVariation">—</div><div class="kpi-foot"><span id="csRelative">—</span></div></article>
+      </section>
+      <div class="explanation"><strong>CSAT = Positivas (1) / Total de avaliações (0 + 1).</strong> A variação em <strong>p.p.</strong> representa a diferença entre as taxas, e o percentual relativo compara com a taxa da semana anterior. As semanas W44/W45 vêm da coluna D. O gráfico diário usa a data de avaliação da coluna H, que pode diferir do intervalo escrito em D.</div>
+      <div class="section-divider section-divider-charts"><div><span class="section-kicker">EVOLUÇÃO E COMPARATIVOS</span><h3>Desempenho por semana e por data</h3></div><span class="section-detail">Semanas da fonte · Taxa ponderada pelo total de avaliações</span></div>
+      <div class="charts-2">
+        <section class="panel chart-panel"><div class="panel-heading"><div><h2>Evolução semanal · CSAT</h2><p>W44, W45 e próximas semanas · Variação W/W no tooltip</p></div><span class="small-tag">W/W</span></div><div class="canvas-wrap"><canvas id="csWeeklyChart"></canvas></div></section>
+        <section class="panel chart-panel"><div class="panel-heading"><div><h2>Evolução diária</h2><p>Data da avaliação (coluna H), mantendo a semana oficial da coluna D</p></div></div><div class="canvas-wrap"><canvas id="csDailyChart"></canvas></div></section>
+      </div>
+      <div class="charts-2">
+        <section class="panel chart-panel"><div class="panel-heading"><div><h2>CSAT por UF</h2><p>Taxa por estado no período selecionado</p></div></div><div class="canvas-wrap"><canvas id="csUfChart"></canvas></div></section>
+        <section class="panel chart-panel"><div class="panel-heading"><div><h2>Avaliações por categoria</h2><p>Quantidade positiva e negativa em cada categoria</p></div></div><div class="canvas-wrap"><canvas id="csCategoryChart"></canvas></div></section>
+      </div>
+      <section class="panel table-panel"><div class="panel-heading"><div><h2>Ranking de S/C · pior para melhor</h2><p>Taxa, volume de avaliações e variação W/W por coordenador/supervisor</p></div><span class="count" id="csScCount">—</span></div>
+        <div class="table-scroll"><table><thead><tr><th>S/C</th><th>Tipo</th><th>Avaliações</th><th>Positivas</th><th>Negativas</th><th>CSAT</th><th>Semana anterior</th><th>Última semana</th><th>Variação W/W</th></tr></thead><tbody id="csScTable"></tbody></table></div>
+      </section>
+      <section class="panel table-panel"><div class="panel-heading"><div><h2>Ranking de bases · pior para melhor</h2><p>Gestão Orlean atualizada · Todas as bases com avaliações elegíveis</p></div><span class="count" id="csBaseCount">—</span></div>
+        <div class="table-scroll"><table><thead><tr><th>Base</th><th>UF</th><th>S/C</th><th>Avaliações</th><th>Positivas</th><th>Negativas</th><th>CSAT</th><th>Semana anterior</th><th>Última semana</th><th>Variação W/W</th></tr></thead><tbody id="csBaseTable"></tbody></table></div>
+      </section>
+    </div>
   </div>
-  <footer class="dashboard-footer"><span>J&T Express · Gestão de Qualidade</span><span>Fontes: TikTok 1BD e 5CD + Gestão de colaboradores · Orlean</span></footer>
+  <footer class="dashboard-footer"><span>J&T Express · Gestão de Qualidade</span><span>Fontes: TikTok 1BD, 5CD e CSAT + Gestão de colaboradores · Orlean</span></footer>
  </main>
 </body>
 </html>

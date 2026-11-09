@@ -72,8 +72,8 @@ def setup():
         conn.commit()
 
 
-# Colunas projetadas por consultas fixas do dashboard 1BD e 5CD.
-# A JT API pode retornar listas posicionais em vez de dicionários.
+# Colunas fixas das consultas do dashboard. Necessárias quando a JT API
+# devolve arrays posicionais em vez de objetos JSON com nomes de coluna.
 _API_COLS_1BD = (
     'data', 'remessa', 'ticket', 'entregue', 'base_original', 'base',
     'codigo', 'uf', 'rm', 'coordenador', 'supervisor', 'sc', 'tipo_sc',
@@ -86,8 +86,19 @@ _API_COLS_5CD = (
 )
 
 
+# Projeção fixa da consulta CSAT; suporta JT API em listas posicionais.
+_API_COLS_CSAT = (
+    'id', 'ano', 'semana_numero', 'semana_id', 'semana_descricao',
+    'data_avaliacao', 'base_chave', 'base', 'codigo', 'uf', 'rm',
+    'coordenador', 'supervisor', 'sc', 'tipo_sc', 'avaliacao',
+    'ticket', 'tracking', 'categoria', 'arquivo_origem',
+)
+
+
 def _api_columns(statement: str):
     normalized = re.sub(r'\s+', ' ', statement).lower()
+    if 'from jt_csat_registros' in normalized:
+        return _API_COLS_CSAT
     if 'from jt_1bd_registros r join jt_1bd_gestao g' in normalized:
         return _API_COLS_1BD
     if 'from jt_5cd_registros r join jt_1bd_gestao g' in normalized:

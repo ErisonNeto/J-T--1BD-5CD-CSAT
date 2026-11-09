@@ -9,22 +9,18 @@ services:
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.10
-      - key: META_1BD
-        value: "0.80"
+        value: '3.12.10'
       - key: JT_STORAGE_MODE
-        value: supabase
-      - key: SUPABASE_CACHE_SECONDS
-        value: "120"
+        value: api
+      - key: JT_API_CACHE_SECONDS
+        value: '60'
+      - key: META_1BD
+        value: '0.80'
       - key: REQUIRE_DASH_AUTH
-        value: "true"
+        value: 'false'
       - key: REQUIRE_REMOTE_DB
-        value: "true"
-      - key: SUPABASE_URL
+        value: 'true'
+      - key: JT_API_URL
         sync: false
-      - key: SUPABASE_SECRET_KEY
-        sync: false
-      - key: DASH_USER
-        sync: false
-      - key: DASH_PASS
+      - key: JT_API_KEY
         sync: false

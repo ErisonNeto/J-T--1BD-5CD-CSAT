@@ -42,7 +42,7 @@ async def basic_auth(request: Request, call_next):
         return JSONResponse({'erro':'DASH_USER e DASH_PASS devem ser configurados'}, status_code=503)
     if REQUIRE_REMOTE_DB and not (IS_POSTGRES or IS_API or IS_SUPABASE):
         return JSONResponse({'erro':'Banco remoto nao configurado; defina JT_STORAGE_MODE e credenciais'}, status_code=503)
-    if USUARIO and SENHA:
+    if REQUIRE_DASH_AUTH and USUARIO and SENHA:
         auth=request.headers.get('authorization', '')
         success=False
         if auth.startswith('Basic '):
@@ -65,7 +65,7 @@ def inicio():
 
 @app.get('/static/{arquivo}')
 def static(arquivo: str):
-    if arquivo not in ('style.css','app.js','5cd.js'):
+    if arquivo not in ('style.css','app.js','5cd.js','csat.js'):
         raise HTTPException(404,'Arquivo não encontrado')
     return FileResponse(ROOT/'static'/arquivo)
 
@@ -299,6 +299,9 @@ def exportar(inicio: Optional[str]=None,fim: Optional[str]=None,uf: str='',sc: s
 from indicador_5cd import router as router_5cd
 app.include_router(router_5cd)
 
+from indicador_csat import router as router_csat
+app.include_router(router_csat)
+
 
 @app.get('/api/indicadores')
 def indicadores():
@@ -308,7 +311,7 @@ def indicadores():
         'indicadores':[
             {'id':'1bd','nome':'Entregas concluídas em 1BD','status':'ativo','fonte':'TikTok — 明細_Detalhamento','endpoint':'/api/dashboard'},
             {'id':'5cd','nome':'Remessas 5CD em aberto','status':'ativo','fonte':'TikTok — BD + Dados históricos','endpoint':'/api/5cd/dashboard'},
-            {'id':'csat','nome':'CSAT','status':'aguardando_arquivo','fonte':None,'endpoint':None},
+            {'id':'csat','nome':'Satisfação do cliente','status':'ativo','fonte':'TikTok CSAT — BASE, colunas D/O/S','endpoint':'/api/csat/dashboard'},
         ],
         'filtro_regional':'ORLEAN DA SILVA DO NASCIMENTO',
         'comparativos':'Semanas fixas de segunda a domingo + mesmo dia da semana passada'

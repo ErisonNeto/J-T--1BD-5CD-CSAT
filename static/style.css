@@ -205,3 +205,10 @@ tbody tr:last-child td { border-bottom:0; }
  .shipping-badges { gap:6px; }
  .shipping-badge { padding:7px 9px;font-size:9px; }
 }
+
+/* CSAT integrado ao padrão visual J&T, com 6 cards e taxas por semana. */
+#indicador-csat .kpi-value.positive { color:#127b4e; }
+#indicador-csat .kpi-value.negative { color:#c21e29; }
+#indicador-csat .filter-fields { align-items:end; }
+#indicador-csat .canvas-wrap { height:300px; }
+#indicador-csat .table-scroll table { min-width:1080px; }

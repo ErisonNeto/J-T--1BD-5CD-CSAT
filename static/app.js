@@ -149,6 +149,7 @@ function selectIndicator(name, updateUrl=true) {
  // Chart.js dimensiona canvases apenas quando visíveis: corrigir ao reabrir o 1BD.
  if(active==='1bd') requestAnimationFrame(()=>Object.values(chartObjs).forEach(chart=>chart.resize()));
  if(active==='5cd') requestAnimationFrame(()=>window.load5cd?.());
+ if(active==='csat') requestAnimationFrame(()=>window.loadCsat?.());
 }
 document.querySelectorAll('.indicator-tab').forEach(tab=>{
  tab.addEventListener('click',()=>selectIndicator(tab.dataset.indicator));
