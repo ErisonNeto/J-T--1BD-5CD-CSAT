@@ -26,7 +26,10 @@ COLS = (
     'coordenador', 'supervisor', 'sc', 'tipo_sc', 'avaliacao',
     'ticket', 'tracking', 'categoria', 'arquivo_origem',
 )
-CSAT_QUERY = f"SELECT {', '.join(COLS)} FROM jt_csat_registros ORDER BY ano, semana_numero, id"
+ORLEAN = 'ORLEAN DA SILVA DO NASCIMENTO'
+CSAT_QUERY = f"SELECT {', '.join(COLS)} FROM jt_csat_registros WHERE rm=? ORDER BY ano, semana_numero, id"
+CSAT_FILTER_QUERY = """SELECT DISTINCT semana_id, semana_descricao, uf, sc, base
+    FROM jt_csat_registros WHERE rm=? ORDER BY semana_id, uf, sc, base"""
 
 
 def setup_local():
@@ -44,12 +47,15 @@ def setup_local():
         conn.commit()
 
 
-def dados():
+def dados(somente_filtros=False):
     if IS_SUPABASE:
         raise HTTPException(503, 'CSAT está no PostgreSQL da J&T. Configure JT_STORAGE_MODE=api no Render após publicar a tabela.')
     setup_local()
     try:
-        return rows(CSAT_QUERY)
+        if somente_filtros:
+            return rows(CSAT_FILTER_QUERY, (ORLEAN,),
+                        columns=('semana_id', 'semana_descricao', 'uf', 'sc', 'base'))
+        return rows(CSAT_QUERY, (ORLEAN,))
     except Exception as exc:
         # Banco remoto sem tabela criada, falhas de rede e ausência de permissões
         # não podem virar zero avaliações silenciosamente.
@@ -156,7 +162,7 @@ def rankear(periodo, semana_atual, semana_anterior, coluna, minimo):
 
 @router.get('/filtros')
 def filtros(uf: str = '', sc: str = ''):
-    return dim_options(dados(), uf, sc)
+    return dim_options(dados(somente_filtros=True), uf, sc)
 
 
 @router.get('/dashboard')
