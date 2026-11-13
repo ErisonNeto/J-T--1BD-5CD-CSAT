@@ -22,7 +22,7 @@ def carregados():
         r.base_original,g.codigo,g.nome AS base,g.uf,g.rm,
         g.coordenador,g.supervisor,g.sc,g.tipo_sc
       FROM jt_5cd_registros r JOIN jt_1bd_gestao g ON g.base_chave=r.base_chave
-      WHERE g.rm=? ORDER BY r.data_relatorio,r.base_chave,r.remessa''',(ORLEAN,))
+      WHERE g.rm=? ORDER BY r.data_relatorio,r.base_chave,r.remessa,r.id''',(ORLEAN,))
 
 
 def procurar_dia(s, default):
@@ -96,10 +96,16 @@ def get_rankings(records,ref,week0,week1,prior0,prior1,dimension,min_volume=1,di
 @router.get('/filtros')
 def filtros(uf:str='',sc:str=''):
     setup_5cd()
-    original=carregados()
-    data=filtrar(original,uf=uf)
+    # Projecao de tres colunas apenas; preserva a mesma lista de bases
+    # presentes no historico 5CD, sem transportar todas as remessas.
+    original=rows('''SELECT DISTINCT g.nome AS base, g.uf AS uf, g.sc AS sc
+        FROM jt_5cd_registros r JOIN jt_1bd_gestao g
+          ON g.base_chave=r.base_chave
+        WHERE g.rm=? ORDER BY g.nome, g.uf, g.sc''',
+        (ORLEAN,), columns=('base', 'uf', 'sc'))
+    data=[r for r in original if not uf or r['uf']==uf]
     scs=sorted({r['sc'] for r in data if r['sc']})
-    if sc:data=filtrar(data,sc=sc)
+    if sc:data=[r for r in data if r['sc']==sc]
     return {'ufs':sorted({r['uf'] for r in original if r['uf']}),
          'scs':scs,'bases':[{'nome':nome,'uf':unidade} for nome,unidade in
               sorted({(r['base'],r['uf']) for r in data})]}

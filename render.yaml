@@ -13,7 +13,9 @@ services:
       - key: JT_STORAGE_MODE
         value: api
       - key: JT_API_CACHE_SECONDS
-        value: '60'
+        value: '300'
+      - key: JT_API_PAGE_SIZE
+        value: '2000'
       - key: META_1BD
         value: '0.80'
       - key: REQUIRE_DASH_AUTH

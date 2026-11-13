@@ -77,7 +77,7 @@ def dados_orlean():
                r.problema
         FROM jt_1bd_registros r JOIN jt_1bd_gestao g
            ON g.base_chave=r.base_chave
-        WHERE g.rm=? ORDER BY r.data_avaliacao, g.nome''', (ORLEAN,))
+        WHERE g.rm=? ORDER BY r.data_avaliacao, g.nome, r.id''', (ORLEAN,))
 
 
 def parse_date(value, fallback):
@@ -201,13 +201,20 @@ def health():
 @app.get('/api/filtros')
 def filtros(uf: str='', sc: str=''):
     setup()
-    data=dados_orlean()
-    data=filter_dim(data,uf=uf)
-    scs=sorted(set(r['sc'] for r in data if r['sc']))
-    if sc:data=filter_dim(data,sc=sc)
-    return {'ufs':sorted(set(r['uf'] for r in dados_orlean() if r['uf'])),
-            'scs':scs,
-            'bases':[{'nome':nome,'uf':uf1} for nome,uf1 in sorted(set((r['base'],r['uf']) for r in data))]}
+    # Os filtros dependem das bases com registros, nao de todas as remessas.
+    # DISTINCT evita baixar o historico completo apenas para popular selects.
+    data = rows('''SELECT DISTINCT g.nome AS base, g.uf AS uf, g.sc AS sc
+        FROM jt_1bd_registros r JOIN jt_1bd_gestao g
+          ON g.base_chave=r.base_chave
+        WHERE g.rm=? ORDER BY g.nome, g.uf, g.sc''',
+        (ORLEAN,), columns=('base', 'uf', 'sc'))
+    ufs = sorted({r['uf'] for r in data if r['uf']})
+    data_uf = [r for r in data if not uf or r['uf'] == uf]
+    scs = sorted({r['sc'] for r in data_uf if r['sc']})
+    data_sc = [r for r in data_uf if not sc or r['sc'] == sc]
+    return {'ufs': ufs, 'scs': scs,
+            'bases': [{'nome': nome, 'uf': unidade} for nome, unidade in
+                      sorted({(r['base'], r['uf']) for r in data_sc})]}
 
 
 @app.get('/api/dashboard')

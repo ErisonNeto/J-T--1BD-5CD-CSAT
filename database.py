@@ -9,6 +9,7 @@ import re
 import sqlite3
 import time
 from functools import lru_cache
+from threading import local
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -71,6 +72,8 @@ def setup():
         conn.execute('CREATE INDEX IF NOT EXISTS ix_1bd_rm ON jt_1bd_gestao(rm)')
         conn.commit()
 
+
+_API_THREAD = local()
 
 # Colunas fixas das consultas do dashboard. Necessárias quando a JT API
 # devolve arrays posicionais em vez de objetos JSON com nomes de coluna.
@@ -137,25 +140,50 @@ def _api_post_query(query: str, params: tuple, columns=None):
     key = os.environ.get('JT_API_KEY', '').strip()
     if not url.startswith('https://') or not key:
         raise RuntimeError('Render precisa de JT_API_URL HTTPS e JT_API_KEY nas Environment Variables.')
-    resp = requests.post(url + '/query', headers={'X-API-Key': key},
-                         json={'sql': query, 'params': list(params)}, timeout=120)
+    # Reutiliza conexoes HTTPS durante a paginacao (uma Session por thread).
+    session = getattr(_API_THREAD, 'session', None)
+    if session is None:
+        session = requests.Session()
+        _API_THREAD.session = session
+    resp = session.post(url + '/query', headers={'X-API-Key': key},
+                        json={'sql': query, 'params': list(params)}, timeout=120)
     if not resp.ok:
         raise RuntimeError(f'JT API /query HTTP {resp.status_code} (verifique API e SQL).')
     return _response_rows(resp.json(), columns)
 
 
-@lru_cache(maxsize=50)
-def _cached_api_rows(statement: str, parameters: tuple, bucket: int):
-    page_size, output, offset = 500, [], 0
+@lru_cache(maxsize=8)
+def _cached_api_rows(statement: str, parameters: tuple, columns: tuple | None, bucket: int):
+    """Busca o conjunto completo em lotes maiores, sem truncar se a API limitar o lote.
+
+    O cache e pequeno para nao reter muitas copias de bases historicas
+    na memoria do Render. Bucket temporal compartilha o resultado entre
+    /filtros, /dashboard e chamadas simultaneas do mesmo intervalo.
+    """
+    cols = columns or _api_columns(statement)
+    if statement.lstrip().lower().startswith('select count(*) as n from '):
+        return tuple(_api_post_query(statement, parameters, cols))
+
+    page_size = max(500, min(5000, int(os.environ.get('JT_API_PAGE_SIZE', '2000'))))
+    output, offset = [], 0
     while True:
         page_sql = f'{statement.strip().rstrip(";")} LIMIT %s OFFSET %s'
-        batch = _api_post_query(page_sql, parameters + (page_size, offset), _api_columns(statement))
-        output.extend(batch)
-        if len(batch) < page_size:
+        try:
+            batch = _api_post_query(page_sql, parameters + (page_size, offset), cols)
+        except RuntimeError as exc:
+            # Compatibilidade com servidores que recusam LIMIT > 500.
+            if offset == 0 and page_size > 500 and 'HTTP ' in str(exc):
+                page_size = 500
+                continue
+            raise
+        if not batch:
             break
+        output.extend(batch)
         offset += len(batch)
         if offset > 200000:
             raise RuntimeError('Limite de paginação JT API excedido.')
+        # Nao interromper em lote parcial: algumas versoes da JT API
+        # aplicam um limite proprio, inferior ao LIMIT solicitado.
     return tuple(output)
 
 
@@ -279,15 +307,16 @@ def _sb_query(query: str, params=()):
     raise RuntimeError('Consulta não suportada pelo adaptador Supabase. Não é executado SQL arbitrário.')
 
 
-def rows(query: str, params=()):
+def rows(query: str, params=(), *, columns=None):
     if IS_SUPABASE:
         return _sb_query(query, params)
     if IS_API:
         if not query.lstrip().upper().startswith(('SELECT ', 'WITH ')):
             raise RuntimeError('JT API aceita apenas SELECT neste painel.')
         statement = query.replace('?', '%s')
-        ttl = max(5, int(os.environ.get('JT_API_CACHE_SECONDS', '60')))
-        return [dict(r) for r in _cached_api_rows(statement, tuple(params), int(time.time() // ttl))]
+        ttl = max(30, int(os.environ.get('JT_API_CACHE_SECONDS', '300')))
+        projected = tuple(columns) if columns else None
+        return [dict(r) for r in _cached_api_rows(statement, tuple(params), projected, int(time.time() // ttl))]
     with connection() as conn:
         cur = conn.execute(sql(query), params)
         return [dict(r) for r in cur.fetchall()]
