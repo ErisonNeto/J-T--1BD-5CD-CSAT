@@ -22,7 +22,7 @@ def carregados():
         r.base_original,g.codigo,g.nome AS base,g.uf,g.rm,
         g.coordenador,g.supervisor,g.sc,g.tipo_sc
       FROM jt_5cd_registros r JOIN jt_1bd_gestao g ON g.base_chave=r.base_chave
-      WHERE g.rm=? ORDER BY r.data_relatorio,r.base_chave,r.remessa''',(ORLEAN,))
+      WHERE g.rm=? ORDER BY r.data_relatorio,r.base_chave,r.remessa,r.id''',(ORLEAN,))
 
 
 def procurar_dia(s, default):
