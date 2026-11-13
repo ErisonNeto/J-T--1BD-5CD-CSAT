@@ -77,7 +77,7 @@ def dados_orlean():
                r.problema
         FROM jt_1bd_registros r JOIN jt_1bd_gestao g
            ON g.base_chave=r.base_chave
-        WHERE g.rm=? ORDER BY r.data_avaliacao, g.nome''', (ORLEAN,))
+        WHERE g.rm=? ORDER BY r.data_avaliacao, g.nome, r.id''', (ORLEAN,))
 
 
 def parse_date(value, fallback):
