@@ -130,7 +130,21 @@ id('export').addEventListener('click',()=>{
  const f=values();delete f.min_volume;
  location.href='/api/exportar.csv?'+qs(f);
 });
-(async()=>{try{await refreshFilters();await load();}catch(e){id('notice').hidden=false;id('notice').textContent=e.message;}})();
+// Abre o 1BD sob demanda: navegar diretamente a 5CD/CSAT nao dispara
+// uma consulta desnecessaria ao historico de 1BD.
+let first1BdLoaded = false;
+let first1BdPromise = null;
+function init1bd(){
+ if(first1BdLoaded || first1BdPromise)return first1BdPromise;
+ first1BdPromise=(async()=>{
+  await refreshFilters();
+  await load();
+  first1BdLoaded=true;
+ })().catch(e=>{
+  id('notice').hidden=false;id('notice').textContent=e.message;
+ }).finally(()=>{first1BdPromise=null;});
+ return first1BdPromise;
+}
 
 
 // Navegação compartilhada da suíte. Indicadores sem arquivo validado não exibem métricas.
@@ -147,7 +161,7 @@ function selectIndicator(name, updateUrl=true) {
  document.title = `J&T Express | ${active.toUpperCase()} · Qualidade`;
  if(updateUrl) history.replaceState(null,'',`#${active}`);
  // Chart.js dimensiona canvases apenas quando visíveis: corrigir ao reabrir o 1BD.
- if(active==='1bd') requestAnimationFrame(()=>Object.values(chartObjs).forEach(chart=>chart.resize()));
+ if(active==='1bd') requestAnimationFrame(()=>{Object.values(chartObjs).forEach(chart=>chart.resize());init1bd();});
  if(active==='5cd') requestAnimationFrame(()=>window.load5cd?.());
  if(active==='csat') requestAnimationFrame(()=>window.loadCsat?.());
 }
