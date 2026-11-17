@@ -80,6 +80,24 @@ def dados_orlean():
         WHERE g.rm=? ORDER BY r.data_avaliacao, g.nome, r.id''', (ORLEAN,))
 
 
+def dados_orlean_resumo():
+    """Para os KPIs, agregue no PostgreSQL por dia/base antes de transferir.
+    O detalhamento por remessa continua disponível no exportador CSV.
+    """
+    campos=('data','base','codigo','uf','coordenador','supervisor',
+            'sc','tipo_sc','total','sim')
+    return rows('''SELECT r.data_avaliacao AS data, g.nome AS base, g.codigo AS codigo,
+                g.uf, g.coordenador, g.supervisor, g.sc, g.tipo_sc,
+                COUNT(*) AS total,
+                SUM(CASE WHEN r.entregue = 1 THEN 1 ELSE 0 END) AS sim
+        FROM jt_1bd_registros r JOIN jt_1bd_gestao g
+          ON g.base_chave = r.base_chave
+        WHERE g.rm = ?
+        GROUP BY r.data_avaliacao, r.base_chave, g.nome, g.codigo,
+                 g.uf, g.coordenador, g.supervisor, g.sc, g.tipo_sc
+        ORDER BY r.data_avaliacao, r.base_chave''', (ORLEAN,), columns=campos)
+
+
 def parse_date(value, fallback):
     if not value:
         return fallback
@@ -100,8 +118,10 @@ def filter_dim(items, uf='', sc='', base=''):
 
 
 def agg(items):
-    c=len(items)
-    yes=sum(int(r['entregue']) for r in items)
+    # Compatível com linhas detalhadas e com os totais consolidados por dia/base.
+    c=sum(int(r['total']) for r in items) if items and 'total' in items[0] else len(items)
+    yes=(sum(int(r['sim']) for r in items) if items and 'sim' in items[0]
+         else sum(int(r['entregue']) for r in items))
     return {'total':c,'sim':yes,'nao':c-yes,'taxa':(yes/c if c else None)}
 
 
@@ -221,7 +241,7 @@ def filtros(uf: str='', sc: str=''):
 def dashboard(inicio: Optional[str]=None,fim: Optional[str]=None,uf: str='',sc: str='',
               base: str='',min_volume:int=Query(1,ge=1,le=1000)):
     setup()
-    todos=dados_orlean()
+    todos=dados_orlean_resumo()
     if not todos:
         return {'sem_dados':True,'mensagem':'Importe as planilhas com python importar_excel.py'}
     data_max=dt.date.fromisoformat(max(r['data'] for r in todos))
@@ -273,7 +293,7 @@ def dashboard(inicio: Optional[str]=None,fim: Optional[str]=None,uf: str='',sc: 
         'ranking_uf':uf_ranking,
         'qualidade_dados':{'bases_gestao':scalar('SELECT COUNT(*) AS n FROM jt_1bd_gestao'),
                             'ocorrencias_totais':scalar('SELECT COUNT(*) AS n FROM jt_1bd_registros'),
-                            'ocorrencias_orlean':len(todos)}
+                            'ocorrencias_orlean':sum(int(r['total']) for r in todos)}
     }
 
 
