@@ -25,6 +25,37 @@ def carregados():
       WHERE g.rm=? ORDER BY r.data_relatorio,r.base_chave,r.remessa,r.id''',(ORLEAN,))
 
 
+def carregados_resumo():
+    """Snapshots 5CD agregados por dia/base no PostgreSQL.
+    Continua contando cada remessa uma vez por dia, com médias dos dias válidos.
+    """
+    campos=('data','base','codigo','uf','coordenador','supervisor','sc',
+            'tipo_sc','total','aging_5_9','aging_10_14','aging_15_19',
+            'aging_20_plus','aging_10_plus','atraso_sim','aging_sem_dado')
+    return rows('''SELECT r.data_relatorio AS data, g.nome AS base, g.codigo, g.uf,
+               g.coordenador, g.supervisor, g.sc, g.tipo_sc,
+               COUNT(*) AS total,
+               SUM(CASE WHEN r.dias_base >= 5 AND r.dias_base < 10 THEN 1 ELSE 0 END) AS aging_5_9,
+               SUM(CASE WHEN r.dias_base >= 10 AND r.dias_base < 15 THEN 1 ELSE 0 END) AS aging_10_14,
+               SUM(CASE WHEN r.dias_base >= 15 AND r.dias_base < 20 THEN 1 ELSE 0 END) AS aging_15_19,
+               SUM(CASE WHEN r.dias_base >= 20 THEN 1 ELSE 0 END) AS aging_20_plus,
+               SUM(CASE WHEN r.dias_base >= 10 THEN 1 ELSE 0 END) AS aging_10_plus,
+               SUM(CASE WHEN LOWER(TRIM(r.atraso)) = 'sim' THEN 1 ELSE 0 END) AS atraso_sim,
+               SUM(CASE WHEN r.dias_base IS NULL THEN 1 ELSE 0 END) AS aging_sem_dado
+        FROM jt_5cd_registros r JOIN jt_1bd_gestao g
+          ON g.base_chave = r.base_chave
+        WHERE g.rm = ?
+        GROUP BY r.data_relatorio, r.base_chave, g.nome, g.codigo, g.uf,
+                 g.coordenador, g.supervisor, g.sc, g.tipo_sc
+        ORDER BY r.data_relatorio, r.base_chave''', (ORLEAN,), columns=campos)
+
+
+def quantidade(records):
+    if records and 'total' in records[0]:
+        return sum(int(r['total']) for r in records)
+    return len(records)
+
+
 def procurar_dia(s, default):
     if not s:return default
     try:return dt.date.fromisoformat(s)
@@ -40,6 +71,10 @@ def filtrar(data,uf='',sc='',base=''):
 
 
 def metrics(records):
+    if records and 'total' in records[0]:
+        campos=('total','aging_5_9','aging_10_14','aging_15_19',
+                'aging_20_plus','aging_10_plus','atraso_sim','aging_sem_dado')
+        return {campo:sum(int(r[campo] or 0) for r in records) for campo in campos}
     n=len(records)
     return {'total':n, 'aging_5_9':sum(1 for x in records if x['dias_base'] is not None and 5<=x['dias_base']<10),
        'aging_10_14':sum(1 for x in records if x['dias_base'] is not None and 10<=x['dias_base']<15),
@@ -70,7 +105,7 @@ def avg_dias(mapa,start,end,dias_relatorio=None):
     # Ausência de linha para a base naquele dia deve ser 0, não dado faltante.
     dates=[day for day in (dias_relatorio if dias_relatorio is not None else mapa) if start<=day<=end]
     if not dates:return {'media':None,'dias':0,'soma':0}
-    v=[len(mapa.get(day,[])) for day in dates]
+    v=[quantidade(mapa.get(day,[])) for day in dates]
     return {'media':round(sum(v)/len(v),2),'dias':len(v),'soma':sum(v)}
 
 
@@ -80,7 +115,7 @@ def get_rankings(records,ref,week0,week1,prior0,prior1,dimension,min_volume=1,di
     for name,m in dias.items():
         ult=metrics(m.get(ref,[]));week=avg_dias(m,week0,week1,dias_relatorio);prev=avg_dias(m,prior0,prior1,dias_relatorio)
         d7=(dt.date.fromisoformat(ref)-dt.timedelta(days=7)).isoformat()
-        day7=len(m.get(d7,[])) if dias_relatorio is not None and d7 in dias_relatorio else (len(m[d7]) if d7 in m else None)
+        day7=quantidade(m.get(d7,[])) if dias_relatorio is not None and d7 in dias_relatorio else (quantidade(m[d7]) if d7 in m else None)
         if ult['total']<min_volume and (week['media'] or 0)<min_volume:continue
         sample=next(iter(next(iter(m.values()))))
         out.append({'nome':name,**ult,'semana':week,'semana_passada':prev,
@@ -115,7 +150,7 @@ def filtros(uf:str='',sc:str=''):
 def dashboard(inicio:str='',fim:str='',uf:str='',sc:str='',base:str='',
               min_volume:int=Query(1,ge=1,le=10000)):
     setup_5cd()
-    source=carregados()
+    source=carregados_resumo()
     if not source:
         return {'sem_dados':True,'mensagem':'Nenhuma remessa 5CD importada. Rode python importar_5cd.py.'}
     limite_min=dt.date.fromisoformat(min(r['data'] for r in source));limite_max=dt.date.fromisoformat(max(r['data'] for r in source))
@@ -139,12 +174,12 @@ def dashboard(inicio:str='',fim:str='',uf:str='',sc:str='',base:str='',
     semana=avg_dias(by,wk.isoformat(),wk1.isoformat(),report_dates)
     anterior=avg_dias(by,prev0.isoformat(),prev1.isoformat(),report_dates)
     today=metrics(by.get(reference,[]))
-    prior=len(by.get(dia7,[])) if dia7 in report_dates else None
+    prior=quantidade(by.get(dia7,[])) if dia7 in report_dates else None
     daily=[]
     for day in sorted(d for d in report_dates if start.isoformat()<=d<=end.isoformat()):
         snapshot=metrics(by.get(day,[]))
         d7=(dt.date.fromisoformat(day)-dt.timedelta(days=7)).isoformat()
-        daily.append({'data':day,**snapshot,'vs_d7':compare_count(snapshot['total'],len(by.get(d7,[])) if d7 in report_dates else None)})
+        daily.append({'data':day,**snapshot,'vs_d7':compare_count(snapshot['total'],quantidade(by.get(d7,[])) if d7 in report_dates else None)})
     weeks=defaultdict(dict)
     for day in report_dates:
         st=week_start(dt.date.fromisoformat(day)).isoformat()
@@ -183,7 +218,7 @@ def dashboard(inicio:str='',fim:str='',uf:str='',sc:str='',base:str='',
         'ranking_uf':get_rankings(filtered,reference,wk.isoformat(),wk1.isoformat(),prev0.isoformat(),prev1.isoformat(),'uf',1,report_dates),
         'ranking_sc':get_rankings(filtered,reference,wk.isoformat(),wk1.isoformat(),prev0.isoformat(),prev1.isoformat(),'sc',min_volume,report_dates),
         'ranking_bases':get_rankings(filtered,reference,wk.isoformat(),wk1.isoformat(),prev0.isoformat(),prev1.isoformat(),'base',min_volume,report_dates),
-        'qualidade_dados':{'remessas_datas':len(filtered),'registros_ult_data':len(reg_ref),
+        'qualidade_dados':{'remessas_datas':quantidade(filtered),'registros_ult_data':quantidade(reg_ref),
           'total_banco':scalar('SELECT COUNT(*) AS n FROM jt_5cd_registros')}
     }
 
