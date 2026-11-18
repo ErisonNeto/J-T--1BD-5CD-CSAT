@@ -14,6 +14,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
+from gestao_postgres import enriquecer, mapa_gestao
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / '.env', override=False)
@@ -272,12 +273,13 @@ def _sb_query(query: str, params=()):
         return [{'n': _sb_count(table, bucket)}]
 
     gestao = {row['base_chave']: row for row in _sb_table('jt_1bd_gestao', bucket)}
+    gestao_vigente = mapa_gestao(int(time.time() // 300))
     rm = str(params[0]) if params else 'ORLEAN DA SILVA DO NASCIMENTO'
     if 'from jt_1bd_registros r join jt_1bd_gestao g' in statement:
         output = []
         for r in _sb_table('jt_1bd_registros', bucket):
             g = gestao.get(r['base_chave'])
-            if not g or g.get('rm') != rm:
+            if not g or (gestao_vigente.get(str(g.get('codigo') or '').strip()) or {}).get('responsavel_regiao') != rm:
                 continue
             output.append({
                 'data': r['data_avaliacao'], 'remessa': r['remessa'], 'ticket': r['ticket'],
@@ -292,7 +294,7 @@ def _sb_query(query: str, params=()):
         output = []
         for r in _sb_table('jt_5cd_registros', bucket):
             g = gestao.get(r['base_chave'])
-            if not g or g.get('rm') != rm:
+            if not g or (gestao_vigente.get(str(g.get('codigo') or '').strip()) or {}).get('responsavel_regiao') != rm:
                 continue
             output.append({
                 'data': r['data_relatorio'], 'remessa': r['remessa'],
@@ -309,14 +311,27 @@ def _sb_query(query: str, params=()):
 
 def rows(query: str, params=(), *, columns=None):
     if IS_SUPABASE:
-        return _sb_query(query, params)
+        return enriquecer(_sb_query(query, params))
     if IS_API:
         if not query.lstrip().upper().startswith(('SELECT ', 'WITH ')):
             raise RuntimeError('JT API aceita apenas SELECT neste painel.')
         statement = query.replace('?', '%s')
+        # No modo JT API, o filtro de regional usa a gestão VIGENTE,
+        # não a fotografia do gestor gravada na importação antiga.
+        normalized = re.sub(r'\\s+', ' ', statement).lower()
+        if 'join jt_1bd_gestao g' in normalized:
+            statement = re.sub(
+                r'g\\.rm\\s*=\\s*%s',
+                "g.codigo::text IN (SELECT estacao_no FROM jt_operacao.vw_gestao_colaboradores_atual WHERE responsavel_regiao = %s)",
+                statement, flags=re.IGNORECASE)
+        elif 'from jt_csat_registros' in normalized:
+            statement = re.sub(
+                r'\\brm\\s*=\\s*%s',
+                "codigo::text IN (SELECT estacao_no FROM jt_operacao.vw_gestao_colaboradores_atual WHERE responsavel_regiao = %s)",
+                statement, flags=re.IGNORECASE)
         ttl = max(30, int(os.environ.get('JT_API_CACHE_SECONDS', '300')))
         projected = tuple(columns) if columns else None
-        return [dict(r) for r in _cached_api_rows(statement, tuple(params), projected, int(time.time() // ttl))]
+        return enriquecer([dict(r) for r in _cached_api_rows(statement, tuple(params), projected, int(time.time() // ttl))])
     with connection() as conn:
         cur = conn.execute(sql(query), params)
         return [dict(r) for r in cur.fetchall()]
