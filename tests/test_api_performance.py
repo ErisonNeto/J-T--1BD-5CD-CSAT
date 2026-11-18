@@ -78,7 +78,7 @@ class FiltersTests(unittest.TestCase):
         self.assertEqual(result['ufs'], ['AM', 'PA'])
         self.assertEqual(result['scs'], ['S/C A', 'S/C B'])
         self.assertEqual(result['bases'], [{'nome': 'BASE A', 'uf': 'PA'}])
-        self.assertIn('DISTINCT', query.call_args.args[0])
+        self.assertIn('GROUP BY', query.call_args.args[0])
 
     def test_5cd_filters_preserve_uf_sc_and_base(self):
         with patch.object(indicador_5cd, 'setup_5cd'), patch.object(

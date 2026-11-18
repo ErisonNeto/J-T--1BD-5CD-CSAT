@@ -133,12 +133,9 @@ def filtros(uf:str='',sc:str=''):
     setup_5cd()
     # Projecao de tres colunas apenas; preserva a mesma lista de bases
     # presentes no historico 5CD, sem transportar todas as remessas.
-    original=rows('''SELECT DISTINCT g.nome AS base, g.uf AS uf, g.sc AS sc
-        FROM jt_5cd_registros r JOIN jt_1bd_gestao g
-          ON g.base_chave=r.base_chave
-        WHERE g.rm=? ORDER BY g.nome, g.uf, g.sc''',
-        (ORLEAN,), columns=('base', 'uf', 'sc'))
-    data=[r for r in original if not uf or r['uf']==uf]
+    # Reutiliza a gestão atual aplicada ao resumo, sem rótulos históricos.
+    original=carregados_resumo()
+    data=original if not uf else [r for r in original if r.get('uf')==uf]
     scs=sorted({r['sc'] for r in data if r['sc']})
     if sc:data=[r for r in data if r['sc']==sc]
     return {'ufs':sorted({r['uf'] for r in original if r['uf']}),

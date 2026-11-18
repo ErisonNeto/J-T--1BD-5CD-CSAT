@@ -28,7 +28,7 @@ COLS = (
 )
 ORLEAN = 'ORLEAN DA SILVA DO NASCIMENTO'
 CSAT_QUERY = f"SELECT {', '.join(COLS)} FROM jt_csat_registros WHERE rm=? ORDER BY ano, semana_numero, id"
-CSAT_FILTER_QUERY = """SELECT DISTINCT semana_id, semana_descricao, uf, sc, base
+CSAT_FILTER_QUERY = """SELECT DISTINCT semana_id, semana_descricao, uf, sc, base, codigo
     FROM jt_csat_registros WHERE rm=? ORDER BY semana_id, uf, sc, base"""
 
 
@@ -54,7 +54,7 @@ def dados(somente_filtros=False):
     try:
         if somente_filtros:
             return rows(CSAT_FILTER_QUERY, (ORLEAN,),
-                        columns=('semana_id', 'semana_descricao', 'uf', 'sc', 'base'))
+                        columns=('semana_id', 'semana_descricao', 'uf', 'sc', 'base', 'codigo'))
         return rows(CSAT_QUERY, (ORLEAN,))
     except Exception as exc:
         # Banco remoto sem tabela criada, falhas de rede e ausência de permissões

@@ -223,11 +223,8 @@ def filtros(uf: str='', sc: str=''):
     setup()
     # Os filtros dependem das bases com registros, nao de todas as remessas.
     # DISTINCT evita baixar o historico completo apenas para popular selects.
-    data = rows('''SELECT DISTINCT g.nome AS base, g.uf AS uf, g.sc AS sc
-        FROM jt_1bd_registros r JOIN jt_1bd_gestao g
-          ON g.base_chave=r.base_chave
-        WHERE g.rm=? ORDER BY g.nome, g.uf, g.sc''',
-        (ORLEAN,), columns=('base', 'uf', 'sc'))
+    # Os filtros são gerados após associar a gestão atual pelo código da base.
+    data = dados_orlean_resumo()
     ufs = sorted({r['uf'] for r in data if r['uf']})
     data_uf = [r for r in data if not uf or r['uf'] == uf]
     scs = sorted({r['sc'] for r in data_uf if r['sc']})
