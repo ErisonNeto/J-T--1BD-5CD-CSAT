@@ -27,9 +27,9 @@ REQUIRE_DASH_AUTH = os.getenv('REQUIRE_DASH_AUTH', '').lower() in ('1','true','y
 REQUIRE_REMOTE_DB = os.getenv('REQUIRE_REMOTE_DB', '').lower() in ('1','true','yes')
 SENHA = os.getenv('DASH_PASS', '').strip()
 try:
-    META = float(os.getenv('META_1BD', '0.80'))
+    META = 0.85
 except ValueError:
-    META = 0.80
+    META = 0.85
 
 app = FastAPI(title='J&T — Qualidade | 1BD · 5CD · CSAT', version='1.1.0')
 
@@ -275,7 +275,7 @@ def dashboard(inicio: Optional[str]=None,fim: Optional[str]=None,uf: str='',sc: 
         'sem_dados':False,
         'contexto':{'inicio':start.isoformat(),'fim':end.isoformat(),'primeira_data':data_min.isoformat(),
                     'ultima_data':data_max.isoformat(),'rm':ORLEAN,
-                    'uf':uf,'sc':sc,'base':base,'meta':META,
+                    'uf':uf,'sc':sc,'base':base,'meta':META,'minimo':0.80,
                     'semana_inicio':semana_inicio.isoformat(),'semana_fim':semana_fim.isoformat(),
                     'semana_passada_inicio':semana_anterior_inicio.isoformat(),
                     'semana_passada_fim':semana_anterior_fim.isoformat(),

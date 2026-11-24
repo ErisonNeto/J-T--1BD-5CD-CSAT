@@ -34,7 +34,7 @@ function deltaHTML(d){
 }
 function chipRate(r){
  if(r===null || r===undefined)return '—';
- return `<span class="pct ${r>=.80?'good':'bad'}">${pct(r)}</span>`;
+ return `<span class="pct ${r>=.85?'good':r>=.80?'warning':'bad'}">${pct(r)}</span>`;
 }
 function values(){return {inicio:id('start').value,fim:id('end').value,uf:id('uf').value,sc:id('sc').value,base:id('base').value,min_volume:id('minvol').value};}
 function selectOptions(el, list, mapper, keep){
@@ -102,10 +102,11 @@ async function load(){
   id('start').min=c.primeira_data;id('end').max=c.ultima_data;
   id('lastDate').textContent=`Última avaliação: ${datefmt(c.ultima_data)}`;
   id('kpiRate').textContent=pct(x.resumo.taxa);
+  for(const [name,value] of [['kpiRate',x.resumo.taxa],['kpiWeek',x.semana_atual.taxa],['kpiPrev',x.semana_passada.taxa],['kpiDay',x.dia_atual.taxa]]){id(name).classList.remove('kpi-good','kpi-warning','kpi-bad');if(value!=null)id(name).classList.add(value>=.85?'kpi-good':value>=.80?'kpi-warning':'kpi-bad');}
   id('kpiTotal').textContent=`${num(x.resumo.total)} avaliações`;
   id('kpiYes').textContent=num(x.resumo.sim);id('kpiNo').textContent=num(x.resumo.nao);
   id('rateBar').style.width=`${Math.min(100,(x.resumo.taxa||0)*100)}%`;
-  id('kpiGoal').textContent=`Meta de referência: ${pct(c.meta)}`;
+  id('kpiGoal').textContent=`Meta: ${pct(c.meta)} · mínimo: ${pct(c.minimo ?? .80)}`;
   id('kpiWeek').textContent=pct(x.semana_atual.taxa);
   id('kpiPrev').textContent=pct(x.semana_passada.taxa);
   id('weekLabel').textContent=`${datefmt(c.semana_inicio)}–${datefmt(c.semana_fim)}`;

@@ -17,7 +17,7 @@ services:
       - key: JT_API_PAGE_SIZE
         value: '2000'
       - key: META_1BD
-        value: '0.80'
+        value: '0.85'
       - key: REQUIRE_DASH_AUTH
         value: 'false'
       - key: REQUIRE_REMOTE_DB

@@ -212,3 +212,7 @@ tbody tr:last-child td { border-bottom:0; }
 #indicador-csat .filter-fields { align-items:end; }
 #indicador-csat .canvas-wrap { height:300px; }
 #indicador-csat .table-scroll table { min-width:1080px; }
+
+.pct.warning,.kpi-warning{color:#926000!important;background:#fff4cf;}
+.kpi-good{color:#087f5b!important;}
+.kpi-bad{color:#c9253c!important;}
