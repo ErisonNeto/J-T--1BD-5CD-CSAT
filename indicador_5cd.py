@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from database import rows, scalar, setup
 from importar_5cd import setup_5cd
+from exportacao_excel import gerar_excel
 
 router=APIRouter(prefix='/api/5cd',tags=['5CD'])
 ORLEAN='ORLEAN DA SILVA DO NASCIMENTO'
@@ -248,3 +249,60 @@ def exportar(inicio:str='',fim:str='',uf:str='',sc:str='',base:str=''):
         w.writerow(vals)
     return StreamingResponse(iter(['\ufeff'+stream.getvalue()]),media_type='text/csv; charset=utf-8',
       headers={'Content-Disposition':f'attachment; filename="JT-5CD-Orlean_{start}_{end}.csv"'})
+
+
+@router.get('/exportar.xlsx')
+def exportar_excel(inicio:str='', fim:str='', uf:str='', sc:str='', base:str=''):
+    """Snapshots 5CD com remessa, Package ID, aging e histórico de origem."""
+    setup_5cd()
+    limites=rows('''SELECT MIN(r.data_relatorio) AS primeira,
+                          MAX(r.data_relatorio) AS ultima
+        FROM jt_5cd_registros r JOIN jt_1bd_gestao g ON g.base_chave=r.base_chave
+        WHERE g.rm=?''', (ORLEAN,), columns=('primeira','ultima'))
+    if not limites or not limites[0]['ultima']:
+        raise HTTPException(404, 'Sem registros 5CD para exportar')
+    primeira=dt.date.fromisoformat(limites[0]['primeira'])
+    ultima=dt.date.fromisoformat(limites[0]['ultima'])
+    end=min(procurar_dia(fim,ultima),ultima)
+    start=procurar_dia(inicio,primeira)
+    if start>end:
+        raise HTTPException(422, 'Data inicial maior que a final')
+    colunas=('id','data','remessa','package_id','dias_base','atraso','faixa',
+             'operacao','motivo','arquivo_origem','aba_origem','base_original',
+             'base','codigo','uf','rm','coordenador','supervisor','sc','tipo_sc')
+    dados=rows('''SELECT r.id, r.data_relatorio AS data, r.remessa, r.package_id,
+                 r.dias_base, r.atraso, r.faixa, r.operacao, r.motivo,
+                 r.arquivo_origem, r.aba_origem, r.base_original,
+                 g.nome AS base, g.codigo, g.uf, g.rm,
+                 g.coordenador, g.supervisor, g.sc, g.tipo_sc
+         FROM jt_5cd_registros r JOIN jt_1bd_gestao g
+           ON g.base_chave=r.base_chave
+         WHERE g.rm=? AND r.data_relatorio>=? AND r.data_relatorio<=?
+         ORDER BY r.data_relatorio, g.nome, r.remessa, r.id''',
+         (ORLEAN,start.isoformat(),end.isoformat()),columns=colunas)
+    dados=filtrar(dados,uf,sc,base)
+    campos=[
+        ('Data do relatório', 'data'),
+        ('Número da remessa', 'remessa'),
+        ('Package ID', 'package_id'),
+        ('Dias na base', 'dias_base'),
+        ('Em atraso?', 'atraso'),
+        ('Faixa', 'faixa'),
+        ('Operação', 'operacao'),
+        ('Motivo', 'motivo'),
+        ('Base original', 'base_original'),
+        ('Base (Gestão)', 'base'),
+        ('Código da base', 'codigo'),
+        ('UF', 'uf'),
+        ('R/M', 'rm'),
+        ('Coordenador', 'coordenador'),
+        ('Supervisor', 'supervisor'),
+        ('S/C', 'sc'),
+        ('Tipo S/C', 'tipo_sc'),
+        ('Arquivo de origem', 'arquivo_origem'),
+        ('Aba de origem', 'aba_origem'),
+        ('ID do snapshot', 'id'),
+    ]
+    return gerar_excel('5CD · Orlean',campos,dados,
+        f'JT-5CD-Remessas_{start}_{end}.xlsx',
+        'Cada linha é uma remessa em um dia/base. A mesma remessa pode aparecer em outros dias; não somar snapshots diferentes.')
