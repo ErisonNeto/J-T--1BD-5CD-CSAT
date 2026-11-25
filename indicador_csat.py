@@ -17,6 +17,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from database import IS_API, IS_SUPABASE, IS_POSTGRES, connection, rows
+from exportacao_excel import gerar_excel
 
 router = APIRouter(prefix='/api/csat', tags=['CSAT'])
 
@@ -237,3 +238,48 @@ def exportar(semana_inicio: str = '', semana_fim: str = '',
     text = '\ufeff' + csvfile.getvalue()
     return StreamingResponse(iter([text]),media_type='text/csv; charset=utf-8',
                              headers={'Content-Disposition':'attachment; filename="J-T-CSAT-Orlean.csv"'})
+
+
+@router.get('/exportar.xlsx')
+def exportar_excel(semana_inicio:str='',semana_fim:str='',
+                  uf:str='',sc:str='',base:str=''):
+    """Cada avaliação CSAT em linha própria, inclusive avaliações repetidas.
+
+    Tracking e ticket são exportados como texto para pesquisas no JMS.
+    O filtro semanal usa a semana OFICIAL da coluna D, não a data da coluna H.
+    """
+    data=dados()
+    if not data:
+        raise HTTPException(404, 'CSAT sem avaliações para exportar')
+    semanas=sorted({r['semana_id'] for r in data},key=semana_sort)
+    a=semana_inicio or semanas[-1]
+    b=semana_fim or semanas[-1]
+    if a not in semanas or b not in semanas or semana_sort(a)>semana_sort(b):
+        raise HTTPException(422,'Período semanal inválido')
+    items=[r for r in filtro_dim(data,uf,sc,base)
+           if semana_sort(a)<=semana_sort(r['semana_id'])<=semana_sort(b)]
+    for registro in items:
+        registro['nota_legivel']='Positiva' if int(registro['avaliacao'])==1 else 'Negativa'
+    campos=[
+        ('Semana oficial', 'semana_id'),
+        ('Descrição da semana', 'semana_descricao'),
+        ('Data da avaliação', 'data_avaliacao'),
+        ('Número da remessa / Tracking', 'tracking'),
+        ('Ticket CSAT', 'ticket'),
+        ('Avaliação', 'nota_legivel'),
+        ('Nota (1 ou 0)', 'avaliacao'),
+        ('Categoria / Motivo', 'categoria'),
+        ('Base', 'base'),
+        ('Código da base', 'codigo'),
+        ('UF', 'uf'),
+        ('R/M', 'rm'),
+        ('Coordenador', 'coordenador'),
+        ('Supervisor', 'supervisor'),
+        ('S/C', 'sc'),
+        ('Tipo S/C', 'tipo_sc'),
+        ('Arquivo de origem', 'arquivo_origem'),
+        ('ID da avaliação', 'id'),
+    ]
+    return gerar_excel('CSAT · Orlean',campos,items,
+        f'JT-CSAT-Remessas_{a}_a_{b}.xlsx',
+        'Uma linha por avaliação: repetição de ticket/remessa não é removida. A semana oficial vem da coluna D; a data da coluna H.')
