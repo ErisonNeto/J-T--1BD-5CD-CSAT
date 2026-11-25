@@ -117,7 +117,7 @@ csId('csUf').addEventListener('change',async()=>{csId('csSc').value='';csId('csB
 csId('csSc').addEventListener('change',async()=>{csId('csBase').value='';await csRefreshFilters();});
 csId('csExport').addEventListener('click',()=>{
   const vals=csValues();delete vals.min_volume;
-  location.href='/api/csat/exportar.csv?'+csQs(vals);
+  location.href='/api/csat/exportar.xlsx?'+csQs(vals);
 });
 window.loadCsat=loadCsat;
 if(location.hash.slice(1)==='csat')loadCsat();
