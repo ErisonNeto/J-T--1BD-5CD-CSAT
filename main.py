@@ -19,6 +19,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from database import rows, scalar, setup, IS_POSTGRES, IS_API, IS_SUPABASE, DATABASE_URL
+from exportacao_excel import gerar_excel
 
 ROOT = Path(__file__).resolve().parent
 ORLEAN = 'ORLEAN DA SILVA DO NASCIMENTO'
@@ -33,16 +34,26 @@ except ValueError:
 
 app = FastAPI(title='J&T — Qualidade | 1BD · 5CD · CSAT', version='1.1.0')
 
+# A visualização permanece pública, mas exportações contendo tracking/tickets
+# exigem credenciais administrativas. Nunca incluir segredos na URL ou JS.
+ROTAS_EXPORTACAO = {
+    '/api/exportar.csv', '/api/exportar.xlsx',
+    '/api/5cd/exportar.csv', '/api/5cd/exportar.xlsx',
+    '/api/csat/exportar.csv', '/api/csat/exportar.xlsx',
+}
+
 
 @app.middleware('http')
 async def basic_auth(request: Request, call_next):
     if request.url.path == '/health':
         return await call_next(request)
-    if REQUIRE_DASH_AUTH and not (USUARIO and SENHA):
-        return JSONResponse({'erro':'DASH_USER e DASH_PASS devem ser configurados'}, status_code=503)
+    exportacao = request.url.path in ROTAS_EXPORTACAO
+    if (REQUIRE_DASH_AUTH or exportacao) and not (USUARIO and SENHA):
+        return JSONResponse({'erro':'Configure DASH_USER e DASH_PASS no Render para exportar registros detalhados.'},
+                            status_code=503, headers={'Cache-Control':'no-store'})
     if REQUIRE_REMOTE_DB and not (IS_POSTGRES or IS_API or IS_SUPABASE):
         return JSONResponse({'erro':'Banco remoto nao configurado; defina JT_STORAGE_MODE e credenciais'}, status_code=503)
-    if REQUIRE_DASH_AUTH and USUARIO and SENHA:
+    if (REQUIRE_DASH_AUTH or exportacao) and USUARIO and SENHA:
         auth=request.headers.get('authorization', '')
         success=False
         if auth.startswith('Basic '):
@@ -53,8 +64,8 @@ async def basic_auth(request: Request, call_next):
             except (ValueError,UnicodeError):
                 pass
         if not success:
-            return JSONResponse({'erro':'Autenticação obrigatória'}, status_code=401,
-                                headers={'WWW-Authenticate':'Basic realm="J&T Qualidade"'})
+            return JSONResponse({'erro':'Autenticação obrigatória para exportar remessas'}, status_code=401,
+                                headers={'WWW-Authenticate':'Basic realm="J&T Exportacao"', 'Cache-Control':'no-store'})
     return await call_next(request)
 
 
@@ -321,6 +332,67 @@ def exportar(inicio: Optional[str]=None,fim: Optional[str]=None,uf: str='',sc: s
     filename=f'J-T-1BD-Orlean_{start}_{end}.csv'
     return StreamingResponse(iter([output]),media_type='text/csv; charset=utf-8',
                              headers={'Content-Disposition':f'attachment; filename="{filename}"'})
+
+
+@app.get('/api/exportar.xlsx')
+def exportar_excel(inicio: Optional[str]=None, fim: Optional[str]=None,
+                  uf: str='', sc: str='', base: str=''):
+    """Detalhe por avaliação 1BD, com remessa, ticket e dados de assinatura."""
+    setup()
+    limites = rows('''SELECT MIN(r.data_avaliacao) AS primeira, MAX(r.data_avaliacao) AS ultima
+        FROM jt_1bd_registros r JOIN jt_1bd_gestao g ON g.base_chave=r.base_chave
+        WHERE g.rm=?''', (ORLEAN,), columns=('primeira', 'ultima'))
+    if not limites or not limites[0]['ultima']:
+        raise HTTPException(404, 'Sem avaliações 1BD para exportar')
+    primeira = dt.date.fromisoformat(limites[0]['primeira'])
+    ultima = dt.date.fromisoformat(limites[0]['ultima'])
+    end = min(parse_date(fim, ultima), ultima)
+    start = parse_date(inicio, primeira)
+    if start > end:
+        raise HTTPException(422, 'Data inicial maior que a final')
+    campos_sql = (
+        'id', 'data', 'remessa', 'ticket', 'entregue', 'problema',
+        'horario_assinatura', 'data_registro', 'arquivo_origem',
+        'base_original', 'base', 'codigo', 'uf', 'rm', 'coordenador',
+        'supervisor', 'sc', 'tipo_sc', 'situacao'
+    )
+    dados = rows('''SELECT r.id, r.data_avaliacao AS data, r.remessa, r.ticket,
+            r.entregue, r.problema, r.horario_assinatura, r.data_registro,
+            r.arquivo_origem, r.base_original, g.nome AS base, g.codigo,
+            g.uf, g.rm, g.coordenador, g.supervisor, g.sc, g.tipo_sc,
+            g.situacao
+        FROM jt_1bd_registros r JOIN jt_1bd_gestao g
+          ON g.base_chave=r.base_chave
+        WHERE g.rm=? AND r.data_avaliacao>=? AND r.data_avaliacao<=?
+        ORDER BY r.data_avaliacao, g.nome, r.id''',
+        (ORLEAN, start.isoformat(), end.isoformat()), columns=campos_sql)
+    dados = filter_dim(dados, uf, sc, base)
+    for r in dados:
+        r['resultado_1bd'] = 'Sim' if int(r['entregue']) else 'Não'
+    campos = [
+        ('Data da avaliação', 'data'),
+        ('Número da remessa', 'remessa'),
+        ('Ticket / Protocolo', 'ticket'),
+        ('Entregue em 1BD?', 'resultado_1bd'),
+        ('Problema / Motivo', 'problema'),
+        ('Horário de assinatura', 'horario_assinatura'),
+        ('Data de registro', 'data_registro'),
+        ('Base original', 'base_original'),
+        ('Base (Gestão)', 'base'),
+        ('Código da base', 'codigo'),
+        ('UF', 'uf'),
+        ('R/M', 'rm'),
+        ('Coordenador', 'coordenador'),
+        ('Supervisor', 'supervisor'),
+        ('S/C', 'sc'),
+        ('Tipo S/C', 'tipo_sc'),
+        ('Situação da base', 'situacao'),
+        ('Arquivo de origem', 'arquivo_origem'),
+        ('ID da avaliação', 'id'),
+    ]
+    return gerar_excel('1BD · Orlean', campos, dados,
+        f'JT-1BD-Remessas_{start}_{end}.xlsx',
+        'Uma linha por avaliação, não por remessa única; avaliações repetidas são preservadas.')
 
 
 from indicador_5cd import router as router_5cd
