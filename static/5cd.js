@@ -100,6 +100,6 @@ c5('c5Uf').addEventListener('change',async()=>{c5('c5Sc').value='';c5('c5Base').
 c5('c5Sc').addEventListener('change',async()=>{c5('c5Base').value='';await c5filters();});
 c5('c5Export').addEventListener('click',()=>{
  const args=c5params();delete args.min_volume;
- location.href='/api/5cd/exportar.csv?'+c5qs(args);
+ location.href='/api/5cd/exportar.xlsx?'+c5qs(args);
 });
 if(location.hash==='#5cd')requestAnimationFrame(()=>c5load(true));
