@@ -129,7 +129,7 @@ id('uf').addEventListener('change',async()=>{id('sc').value='';id('base').value=
 id('sc').addEventListener('change',async()=>{id('base').value='';await refreshFilters();});
 id('export').addEventListener('click',()=>{
  const f=values();delete f.min_volume;
- location.href='/api/exportar.csv?'+qs(f);
+ location.href='/api/exportar.xlsx?'+qs(f);
 });
 // Abre o 1BD sob demanda: navegar diretamente a 5CD/CSAT nao dispara
 // uma consulta desnecessaria ao historico de 1BD.
