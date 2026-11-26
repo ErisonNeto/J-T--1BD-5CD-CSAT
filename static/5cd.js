@@ -31,7 +31,7 @@ function c5chart(elem,kind,labels,values,title,details,colors){
  if(typeof Chart==='undefined')return;
  c5plots[elem]=new Chart(c5(elem),{type:kind,data:{labels,datasets:[{label:title,data:values,
    borderColor:'#D7242E',backgroundColor:colors||'#D7242E',borderRadius:5,maxBarThickness:43,
-   borderWidth:2,fill:kind==='line',tension:.25,pointRadius:kind==='line'?3:0,spanGaps:false}]},
+   borderWidth:2,fill:false,tension:.25,pointRadius:kind==='line'?4:0,spanGaps:false}]},
    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{afterBody:ctx=>details?.[ctx[0].dataIndex]||''}}},
      scales:{x:{ticks:{maxRotation:0,maxTicksLimit:12},grid:{display:false}},y:{beginAtZero:true,grid:{color:'#EDF0F4'}}}}});
 }
@@ -77,6 +77,9 @@ async function c5load(force=false){
   c5('c5ScCount').textContent=`${c5num(x.ranking_sc.length)} responsáveis`;
   c5('c5BaseCount').textContent=`${c5num(x.ranking_bases.length)} bases`;
   const daily=x.evolucao_diaria,weekly=x.evolucao_semanal,ufs=x.ranking_uf;
+  const cobertura=x.contexto.dias_com_relatorio??daily.filter(r=>r.com_relatorio).length;
+  const totalDias=x.contexto.dias_no_periodo??daily.length;
+  c5('c5DailyCoverage').textContent=`${cobertura}/${totalDias} dia(s) com relatório · lacunas não são zero`;
   c5chart('c5DailyChart','line',daily.map(r=>c5fmt(r.data).slice(0,5)),daily.map(r=>r.total),'Pendentes',
     daily.map(r=>`10+ dias: ${c5num(r.aging_10_plus)} | D-7: ${r.vs_d7.percentual===null?'—':c5num(r.vs_d7.percentual)+'%'}`));
   c5chart('c5WeeklyChart','bar',weekly.map(r=>c5fmt(r.inicio).slice(0,5)),weekly.map(r=>r.media),'Média de pendentes',
