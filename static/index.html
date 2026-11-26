@@ -81,7 +81,7 @@
   </div>
   </div>
   <div id="indicador-5cd" role="tabpanel" aria-labelledby="tab-5cd" hidden>
-   <div class="title-row"><div><div class="eyebrow">TIKTOK · TRECHO D · LM 5CD</div><h2 class="indicator-heading">Remessas pendentes no relatório 5CD</h2><p class="subtitle">Volume por data de relatório (coluna I), R/M Orlean, S/C e bases</p></div>
+   <div class="title-row"><div><div class="eyebrow">TIKTOK · TRECHO D · LM 5CD</div><h2 class="indicator-heading">Remessas pendentes no relatório 5CD</h2><p class="subtitle">Volume por data de relatório, R/M Orlean, S/C e bases</p></div>
      <div class="header-actions"><span id="c5Date" class="last-date">Último relatório: —</span><button class="download" id="c5Export" type="button">Exportar remessas 5CD (Excel)</button></div></div>
    <section class="filters panel" aria-label="Filtros 5CD">
     <div class="filters-head"><div><span class="section-kicker">FILTROS · 5CD</span><h3>Personalize sua análise</h3><p>Data, UF, responsável e base. As duas datas iniciam automaticamente em D-2.</p></div><span class="filters-period">D-2 <small>padrão</small></span></div>
@@ -100,7 +100,7 @@
      <div class="section-divider"><div><span class="section-kicker">VISÃO OPERACIONAL</span><h3>Resumo do período</h3></div><span class="section-detail">Pendências, aging e comparativos semanais</span></div>
      <section class="cards">
        <article class="kpi main-kpi"><span class="kpi-label">Pendentes · último relatório</span><div class="kpi-value" id="c5Total">—</div><div class="kpi-foot">Remessas distintas por data e base</div></article>
-       <article class="kpi"><span class="kpi-label">De 5 a 9 dias em base</span><div class="kpi-value" id="c5Aging5">—</div><div class="kpi-foot"><span>Faixa por coluna C</span><span id="c5Aging5Delta">—</span></div></article>
+       <article class="kpi"><span class="kpi-label">De 5 a 9 dias em base</span><div class="kpi-value" id="c5Aging5">—</div><div class="kpi-foot"><span>Tempo em base</span><span id="c5Aging5Delta">—</span></div></article>
        <article class="kpi"><span class="kpi-label">10 dias ou mais</span><div class="kpi-value negative" id="c5Aging10">—</div><div class="kpi-foot"><span>Remessas mais antigas</span><span id="c5Aging10Delta">—</span></div></article>
        <article class="kpi"><span class="kpi-label">Média diária · semana atual</span><div class="kpi-value" id="c5Week">—</div><div class="kpi-foot"><span id="c5WeekLabel">Seg–Dom</span><span id="c5WeekDelta">—</span></div></article>
        <article class="kpi"><span class="kpi-label">Média diária · semana passada</span><div class="kpi-value" id="c5Prev">—</div><div class="kpi-foot" id="c5PrevLabel">Seg–Dom</div></article>
@@ -127,12 +127,12 @@
   <div id="indicador-csat" role="tabpanel" aria-labelledby="tab-csat" hidden>
     <div class="title-row"><div><div class="eyebrow">TIKTOK · CSAT · LAST MILE</div>
       <h2 class="indicator-heading">Satisfação do cliente — CSAT</h2>
-      <p class="subtitle">Base TikTok · Semana oficial (coluna D) · R/M Orlean · Avaliação 1 positiva / 0 negativa</p></div>
+      <p class="subtitle">Base TikTok · Semana oficial do relatório · R/M Orlean · Avaliação 1 positiva / 0 negativa</p></div>
       <div class="header-actions"><span id="csLast" class="last-date">Atualizando dados...</span><button id="csExport" class="download" type="button">Exportar avaliações CSAT (Excel)</button></div>
     </div>
     <section class="filters panel" aria-label="Filtros CSAT">
       <div class="filters-head"><div><span class="section-kicker">FILTROS · CSAT</span><h3>Personalize sua análise</h3>
-        <p>Semanas do próprio relatório, UF, S/C e base. W44 e W45 são definidas pela coluna D, não pelo calendário.</p></div>
+        <p>Semanas do próprio relatório, UF, S/C e base. W44 e W45 seguem as semanas oficiais do relatório.</p></div>
         <span class="filters-period">W/W <small>semanal</small></span></div>
       <div class="filter-fields">
         <div class="filter-group"><label for="csStart">Semana inicial</label><select id="csStart"><option value="">Última semana</option></select></div>
@@ -149,17 +149,17 @@
       <div class="section-divider"><div><span class="section-kicker">SATISFAÇÃO DO CLIENTE</span><h3>Resumo do período</h3></div><span class="section-detail">Avaliações válidas: 1 positiva, 0 negativa</span></div>
       <section class="cards">
         <article class="kpi main-kpi"><span class="kpi-label">Taxa CSAT · período</span><div class="kpi-value" id="csRate">—</div><div class="kpi-foot"><span id="csRateTotal">— avaliações</span><span>Positivas / total</span></div></article>
-        <article class="kpi"><span class="kpi-label">Avaliações positivas</span><div class="kpi-value positive" id="csPositive">—</div><div class="kpi-foot">Coluna S = 1</div></article>
-        <article class="kpi"><span class="kpi-label">Avaliações negativas</span><div class="kpi-value negative" id="csNegative">—</div><div class="kpi-foot">Coluna S = 0</div></article>
+        <article class="kpi"><span class="kpi-label">Avaliações positivas</span><div class="kpi-value positive" id="csPositive">—</div><div class="kpi-foot">Avaliações favoráveis</div></article>
+        <article class="kpi"><span class="kpi-label">Avaliações negativas</span><div class="kpi-value negative" id="csNegative">—</div><div class="kpi-foot">Avaliações desfavoráveis</div></article>
         <article class="kpi"><span class="kpi-label">Última semana selecionada</span><div class="kpi-value" id="csCurrent">—</div><div class="kpi-foot"><span id="csCurrentLabel">—</span></div></article>
         <article class="kpi"><span class="kpi-label">Semana anterior</span><div class="kpi-value" id="csPrevious">—</div><div class="kpi-foot"><span id="csPreviousLabel">—</span></div></article>
         <article class="kpi"><span class="kpi-label">Variação semanal</span><div class="kpi-value" id="csVariation">—</div><div class="kpi-foot"><span id="csRelative">—</span></div></article>
       </section>
-      <div class="explanation"><strong>CSAT = Positivas (1) / Total de avaliações (0 + 1).</strong> A variação em <strong>p.p.</strong> representa a diferença entre as taxas, e o percentual relativo compara com a taxa da semana anterior. As semanas W44/W45 vêm da coluna D. O gráfico diário usa a data de avaliação da coluna H, que pode diferir do intervalo escrito em D.</div>
+      <div class="explanation"><strong>CSAT = Positivas (1) / Total de avaliações (0 + 1).</strong> A variação em <strong>p.p.</strong> representa a diferença entre as taxas, e o percentual relativo compara com a taxa da semana anterior. As semanas W44/W45 seguem o relatório oficial. O gráfico diário usa a data da avaliação, que pode diferir do período da semana oficial.</div>
       <div class="section-divider section-divider-charts"><div><span class="section-kicker">EVOLUÇÃO E COMPARATIVOS</span><h3>Desempenho por semana e por data</h3></div><span class="section-detail">Semanas da fonte · Taxa ponderada pelo total de avaliações</span></div>
       <div class="charts-2">
         <section class="panel chart-panel"><div class="panel-heading"><div><h2>Evolução semanal · CSAT</h2><p>W44, W45 e próximas semanas · Variação W/W no tooltip</p></div><span class="small-tag">W/W</span></div><div class="canvas-wrap"><canvas id="csWeeklyChart"></canvas></div></section>
-        <section class="panel chart-panel"><div class="panel-heading"><div><h2>Evolução diária</h2><p>Data da avaliação (coluna H), mantendo a semana oficial da coluna D</p></div></div><div class="canvas-wrap"><canvas id="csDailyChart"></canvas></div></section>
+        <section class="panel chart-panel"><div class="panel-heading"><div><h2>Evolução diária</h2><p>Data da avaliação, mantendo a semana oficial do relatório</p></div></div><div class="canvas-wrap"><canvas id="csDailyChart"></canvas></div></section>
       </div>
       <div class="charts-2">
         <section class="panel chart-panel"><div class="panel-heading"><div><h2>CSAT por UF</h2><p>Taxa por estado no período selecionado</p></div></div><div class="canvas-wrap"><canvas id="csUfChart"></canvas></div></section>
