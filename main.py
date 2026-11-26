@@ -410,7 +410,7 @@ def indicadores():
         'indicadores':[
             {'id':'1bd','nome':'Entregas concluídas em 1BD','status':'ativo','fonte':'TikTok — 明細_Detalhamento','endpoint':'/api/dashboard'},
             {'id':'5cd','nome':'Remessas 5CD em aberto','status':'ativo','fonte':'TikTok — BD + Dados históricos','endpoint':'/api/5cd/dashboard'},
-            {'id':'csat','nome':'Satisfação do cliente','status':'ativo','fonte':'TikTok CSAT — BASE, colunas D/O/S','endpoint':'/api/csat/dashboard'},
+            {'id':'csat','nome':'Satisfação do cliente','status':'ativo','fonte':'TikTok CSAT — avaliações do relatório','endpoint':'/api/csat/dashboard'},
         ],
         'filtro_regional':'ORLEAN DA SILVA DO NASCIMENTO',
         'comparativos':'Semanas fixas de segunda a domingo + mesmo dia da semana passada'

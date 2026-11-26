@@ -197,7 +197,7 @@ def dashboard(semana_inicio: str = '', semana_fim: str = '',
                      'semana_inicio': s_from, 'semana_fim': s_to,
                      'ultima_semana': last, 'semana_anterior': previous_id,
                      'semanas': options['semanas'],
-                     'nota': 'A semana oficial é a coluna D (W44/W45). A coluna H é usada apenas na evolução diária.'},
+                     'nota': 'As semanas W44/W45 seguem o relatório oficial. A data da avaliação é usada na evolução diária.'},
         'resumo': total,
         'semana_atual': cur,
         'semana_passada': prev,
@@ -282,4 +282,4 @@ def exportar_excel(semana_inicio:str='',semana_fim:str='',
     ]
     return gerar_excel('CSAT · Orlean',campos,items,
         f'JT-CSAT-Remessas_{a}_a_{b}.xlsx',
-        'Uma linha por avaliação: repetição de ticket/remessa não é removida. A semana oficial vem da coluna D; a data da coluna H.')
+        'Uma linha por avaliação: repetição de ticket/remessa não é removida. A semana oficial e a data da avaliação seguem o relatório.')
