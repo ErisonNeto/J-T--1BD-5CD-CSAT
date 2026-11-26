@@ -176,31 +176,11 @@ def dashboard(inicio:str='',fim:str='',uf:str='',sc:str='',base:str='',
     anterior=avg_dias(by,prev0.isoformat(),prev1.isoformat(),report_dates)
     today=metrics(by.get(reference,[]))
     prior=quantidade(by.get(dia7,[])) if dia7 in report_dates else None
-    # Exibir TODOS os dias do filtro. Quando nao existe snapshot naquela data,
-    # informar NULL/sem relatorio, nunca zero, para o grafico nao unir dias distantes.
     daily=[]
-    dias_com_relatorio=0
-    cursor=start
-    while cursor<=end:
-        day=cursor.isoformat()
-        d7=(cursor-dt.timedelta(days=7)).isoformat()
-        if day in report_dates:
-            dias_com_relatorio+=1
-            snapshot=metrics(by.get(day,[]))
-            daily.append({'data':day,**snapshot,'com_relatorio':True,
-                          'vs_d7':compare_count(
-                              snapshot['total'],
-                              quantidade(by.get(d7,[])) if d7 in report_dates else None)})
-        else:
-            # Zero e permitido somente quando existe relatorio para a regional
-            # e o S/C/base filtrado nao tem remessas nesse snapshot.
-            daily.append({'data':day,'total':None,
-                          'aging_5_9':None,'aging_10_14':None,
-                          'aging_15_19':None,'aging_20_plus':None,
-                          'aging_10_plus':None,'atraso_sim':None,
-                          'aging_sem_dado':None,'com_relatorio':False,
-                          'vs_d7':compare_count(None,None)})
-        cursor+=dt.timedelta(days=1)
+    for day in sorted(d for d in report_dates if start.isoformat()<=d<=end.isoformat()):
+        snapshot=metrics(by.get(day,[]))
+        d7=(dt.date.fromisoformat(day)-dt.timedelta(days=7)).isoformat()
+        daily.append({'data':day,**snapshot,'vs_d7':compare_count(snapshot['total'],quantidade(by.get(d7,[])) if d7 in report_dates else None)})
     weeks=defaultdict(dict)
     for day in report_dates:
         st=week_start(dt.date.fromisoformat(day)).isoformat()
@@ -224,8 +204,6 @@ def dashboard(inicio:str='',fim:str='',uf:str='',sc:str='',base:str='',
           'semana_inicio':wk.isoformat(),'semana_fim':wk1.isoformat(),
           'semana_passada_inicio':prev0.isoformat(),'semana_passada_fim':prev1.isoformat(),
           'uf':uf,'sc':sc,'base':base,'rm':ORLEAN,
-          'dias_com_relatorio':dias_com_relatorio,
-          'dias_no_periodo':(end-start).days+1,
           'nota':'I é a data do relatório. Semana é média dos snapshots disponíveis entre segunda e domingo. Não somar a mesma remessa entre dias; dias sem relatório não são zero.'},
         'resumo':today,
         'aging_variacao_semana':{name:compare_count(
